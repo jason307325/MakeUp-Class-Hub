@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>春季季學期 請假補課點名系統 (23行/可編表頭/三網址)</title>
+    <title>春季季學期 請假補課點名系統 (完整功能/23行/可編表頭)</title>
     <!-- 引入 SheetJS 用於 Excel 匯入匯出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -38,7 +38,7 @@
         .quota-panel { background: #f8fafd; border-radius: 24px; padding: 20px; border: 1px solid #dde3ed; margin-top: 20px; }
         .quota-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start; }
         .quota-item { background: white; border-radius: 20px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); flex: 0 1 200px; border: 1px solid #e9eef3; }
-        .quota-title { font-weight: 700; margin-bottom: 12px; color: #1e2b3a; border-bottom: 2px dashed #bdc9d9; padding-bottom: 6px; }
+        .quota-title { font-weight: 700; margin-bottom: 12px; color: #1e2b3a; border-bottom: 2px dashed #bdc9d9; padding-bottom: 6px; word-break: break-word; }
         .quota-row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 0.9rem; }
         .quota-value { font-weight: 700; color: #0066a0; }
         .admin-input { width: 70px; padding: 6px; border-radius: 30px; border: 1px solid #bdc9d9; text-align: center; }
@@ -75,14 +75,14 @@
 <body>
 <div class="app-container" id="app">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1>📋 春季季學期 — 23行/可編表頭/三網址</h1>
+        <h1>📋 春季季學期 S1 — 完整功能 (23行/可編表頭/三網址)</h1>
         <div class="role-bar">
             <button class="role-btn" :class="{active: role==='parent'}" @click="role='parent'">👪 家長</button>
             <button class="role-btn" :class="{active: role==='teacher'}" @click="role='teacher'">📌 老師</button>
             <button class="role-btn" :class="{active: role==='admin'}" @click="role='admin'">⚙️ 後台管理</button>
         </div>
     </div>
-    <div class="subtitle">📅 最多23行｜表頭可編輯｜上傳Excel只取姓名級數｜三網址自動切換角色</div>
+    <div class="subtitle">📅 最多23行｜表頭可編輯｜上傳Excel只取姓名級數｜雙擊請假/點名｜後台可編輯</div>
 
     <!-- 主要表格 (固定8列，最多23行) -->
     <div class="table-wrapper">
@@ -92,8 +92,8 @@
                     <th>#</th>
                     <th v-for="(header, idx) in fixedHeaders" :key="idx" 
                         @click="handleHeaderClick(idx)" 
-                        :class="{editable: editMode}">
-                        <span v-if="!editMode || editingHeader !== idx">{{ header }}</span>
+                        :class="{editable: role==='admin' && editMode}">
+                        <span v-if="!(role==='admin' && editMode && editingHeader === idx)">{{ header }}</span>
                         <input v-else type="text" v-model="editingHeaderText" @blur="saveHeader" @keyup.enter="saveHeader" class="edit-input" autofocus>
                     </th>
                 </tr>
@@ -108,6 +108,7 @@
                             <span class="student-name">{{ cell.name }}</span>
                             <span v-if="cell.group" class="group-badge" :class="getBadgeClass(cell.group)">{{ cell.group }}</span>
                             <span v-if="cell.star" class="star-mark" title="無考試">*</span>
+                            <!-- 補課按鈕 (僅家長模式顯示) -->
                             <button v-if="role==='parent' && currentDate && currentSessionObj" 
                                     class="makeup-btn" 
                                     @click.stop="registerMakeup(cell, rowIdx, colIdx)"
@@ -115,19 +116,32 @@
                                 📝補
                             </button>
                         </template>
+                        <!-- 後台編輯模式時，空白格顯示加號 (可點擊新增) -->
+                        <div v-else-if="role==='admin' && editMode" style="min-width:60px; color:#4a9eff;" @click="addStudent(rowIdx, colIdx)">➕</div>
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- 提示 -->
-    <div class="tip" v-if="role==='parent'">👆 家長：雙擊姓名請假(綠色)；點擊「補」登記補課</div>
-    <div class="tip" v-if="role==='teacher'">👆 老師：雙擊姓名點名出席(黃色)</div>
-    <div class="tip" v-if="role==='admin' && !editMode">👆 管理員：開啟編輯模式可修改表頭，或上傳Excel</div>
-    <div class="edit-mode-indicator" v-if="editMode">✏️ 編輯模式啟用 (點擊標題可修改班級名)</div>
+    <!-- 提示與編輯控制 -->
+    <div class="flex-row" style="justify-content: space-between;">
+        <div>
+            <span class="tip" v-if="role==='parent'">👆 家長：雙擊姓名請假(綠色)；點擊「補」登記補課</span>
+            <span class="tip" v-if="role==='teacher'">👆 老師：雙擊姓名點名出席(黃色)</span>
+            <span class="tip" v-if="role==='admin' && !editMode">👆 管理員：開啟編輯模式可修改表頭、新增學生</span>
+            <span class="edit-mode-indicator" v-if="role==='admin' && editMode">✏️ 編輯模式啟用 (點擊標題修改班級名，點空白格加號新增學生)</span>
+        </div>
+        <div v-if="role==='admin'">
+            <button class="submit-btn" style="background:#ff9f4a;" @click="editMode = !editMode">
+                {{ editMode ? '關閉編輯模式' : '開啟編輯模式' }}
+            </button>
+            <button class="submit-btn" style="background:#4a9eff;" @click="addRow" v-if="editMode && tableRows.length < 23">➕ 新增一行 (最多23)</button>
+            <button class="submit-btn" style="background:#ff6b6b;" @click="deleteLastRow" v-if="editMode && tableRows.length > 0">🗑️ 刪除最後一行</button>
+        </div>
+    </div>
 
-    <!-- 日期與時段分頁 (家長模式) -->
+    <!-- 日期與時段分頁 (僅家長模式顯示) -->
     <div v-if="role==='parent'" class="tabs-container">
         <div class="date-tabs">
             <span v-for="(d, idx) in dateList" :key="idx" 
@@ -145,7 +159,7 @@
         </div>
     </div>
 
-    <!-- 補課名額區塊 -->
+    <!-- 補課名額區塊 (所有角色可見) -->
     <div class="quota-panel">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3>📊 目前補課名額 / 候補數</h3>
@@ -164,7 +178,7 @@
         </div>
     </div>
 
-    <!-- 後台管理介面 (Excel上傳) -->
+    <!-- 後台管理介面 (Excel上傳與進階工具) -->
     <div class="form-card" v-if="role==='admin'">
         <div class="form-title">⚙️ 後台管理 (可編輯表頭／上傳Excel)</div>
         <div class="notice">🔧 上傳Excel：系統會自動提取「姓名 級數」(例如「朱宓清 1Y」)填入對應欄位，最多23行。表頭可直接點擊修改。</div>
@@ -175,9 +189,6 @@
                 <input type="date" v-model="startDateInput" @change="generateDates">
             </div>
             <button class="submit-btn" style="background:#4a9eff;" @click="generateDates">📅 產生兩週日期</button>
-            <button class="submit-btn" style="background:#ff9f4a;" @click="editMode = !editMode">
-                {{ editMode ? '關閉編輯模式' : '開啟編輯模式' }}
-            </button>
         </div>
 
         <div class="excel-upload">
@@ -206,7 +217,7 @@
         </div>
     </div>
 
-    <!-- 家長備用表單 -->
+    <!-- 家長備用表單 (保留) -->
     <div class="form-card" v-if="role==='parent'">
         <div class="form-title">✏️ 家長請假 (也可雙擊表格)</div>
         <div class="notice">💡 請假後該生標記綠色，所屬班級補課名額+1。</div>
@@ -219,7 +230,7 @@
         <button class="submit-btn" @click="submitLeave">✓ 送出請假</button>
     </div>
 
-    <!-- 老師點名表單 -->
+    <!-- 老師點名表單 (保留) -->
     <div class="form-card" v-if="role==='teacher'">
         <div class="form-title">📌 老師點名 (雙擊表格快速點名)</div>
         <div class="form-grid">
@@ -278,12 +289,12 @@
 
     let flatId = 0;
     // 從表格建立學生列表 (最多23行)
-    function buildStudentList(table) {
+    function buildStudentList(table, headers) {
         let list = [];
         for (let r = 0; r < table.length; r++) {
             for (let c = 0; c < table[r].length; c++) {
                 let cell = table[r][c];
-                if (cell && cell.name && cell.name !== '3/2幼兒園加入' && !cell.name.includes('饅頭 Sb') && !cell.name.includes('史努比') && !cell.name.includes('青蛙') && !cell.name.includes('阿軍2/23') && !cell.name.includes('小馬一二四') && !cell.name.includes('小白') && !cell.name.includes('綠茶') && !cell.name.includes('銅鐵人')) {
+                if (cell && cell.name) {
                     let group = cell.group || '';
                     let star = group.includes('*');
                     let cleanGroup = group.replace('*', '');
@@ -293,23 +304,7 @@
                         star: star,
                         row: r,
                         col: c,
-                        className: fixedHeaders.value[c], // 注意：這裡需要使用當前的表頭
-                        id: flatId++,
-                        leave: false,
-                        present: false,
-                        leaveSessions: []
-                    });
-                } else if (cell && cell.name) {
-                    let group = cell.group || '';
-                    let star = group.includes('*');
-                    let cleanGroup = group.replace('*', '');
-                    list.push({
-                        ...cell,
-                        group: cleanGroup,
-                        star: star,
-                        row: r,
-                        col: c,
-                        className: fixedHeaders.value[c],
+                        className: headers[c],
                         id: flatId++,
                         leave: false,
                         present: false,
@@ -369,7 +364,9 @@
                     this.quotas = newQuotas;
                     // 更新所有學生的 className
                     this.allStudents.forEach(s => {
-                        s.className = newHeaders[s.col];
+                        if (s.col < newHeaders.length) {
+                            s.className = newHeaders[s.col];
+                        }
                     });
                     this.syncStudents();
                 },
@@ -405,15 +402,20 @@
             // 雙擊處理
             handleDoubleClick(cell, row, col) {
                 if (!cell) return;
-                if (this.role === 'admin') { alert('管理員模式請使用下方工具'); return; }
                 let student = this.allStudents.find(s => s.row === row && s.col === col);
                 if (!student) return;
+                
                 if (this.role === 'parent') {
+                    // 家長雙擊：請假
                     if (!this.currentDate || !this.currentSessionCode) { alert('請先選擇日期與時段'); return; }
                     if (student.leave) { alert('已請假'); return; }
                     this.setStudentLeave(student, true, this.currentDate, this.currentSessionCode);
                 } else if (this.role === 'teacher') {
+                    // 老師雙擊：點名 (切換出席)
                     this.setStudentPresent(student, !student.present);
+                } else if (this.role === 'admin' && this.editMode) {
+                    // 後台編輯模式下，雙擊可快速修改姓名 (可選，但我們有下方開關，此處不處理)
+                    // 簡單起見，不做任何事
                 }
             },
             setStudentLeave(stu, leave, dateStr, sessionCode) {
@@ -552,7 +554,7 @@
             },
             // 編輯標題
             handleHeaderClick(idx) {
-                if (!this.editMode) return;
+                if (!(this.role === 'admin' && this.editMode)) return;
                 this.editingHeader = idx;
                 this.editingHeaderText = this.fixedHeaders[idx];
             },
@@ -561,6 +563,52 @@
                     this.fixedHeaders.splice(this.editingHeader, 1, this.editingHeaderText);
                     this.editingHeader = null;
                 }
+            },
+            // 新增學生 (後台編輯模式)
+            addStudent(row, col) {
+                let newName = prompt('請輸入學生姓名 (格式：姓名 級數，例如 王小明 3Y)');
+                if (!newName) return;
+                let name = newName, group = '';
+                const parts = newName.split(/\s+/);
+                if (parts.length >= 2) {
+                    name = parts[0];
+                    group = parts[1];
+                }
+                let newCell = { name, group, star: group.includes('*') };
+                this.tableRows[row][col] = newCell;
+                // 新增到 allStudents
+                this.allStudents.push({
+                    ...newCell,
+                    row, col,
+                    className: this.fixedHeaders[col],
+                    id: flatId++,
+                    leave: false,
+                    present: false,
+                    leaveSessions: []
+                });
+                this.syncStudents();
+            },
+            // 新增一行 (最多23)
+            addRow() {
+                if (this.tableRows.length >= 23) { alert('最多只能有23行'); return; }
+                let newRow = [];
+                for (let i = 0; i < this.fixedHeaders.length; i++) {
+                    newRow.push(null);
+                }
+                this.tableRows.push(newRow);
+            },
+            // 刪除最後一行
+            deleteLastRow() {
+                if (this.tableRows.length <= 0) return;
+                let lastRow = this.tableRows.length - 1;
+                // 移除該行的學生
+                this.allStudents = this.allStudents.filter(s => s.row !== lastRow);
+                this.tableRows.pop();
+                // 更新所有學生 row 索引
+                this.allStudents.forEach(s => {
+                    if (s.row > lastRow) s.row -= 1;
+                });
+                this.syncStudents();
             },
             // Excel 上傳處理：只取姓名與級數，最多23行
             handleExcelUpload(event) {
@@ -584,7 +632,7 @@
                             if (cellValue === '') {
                                 newRow.push(null);
                             } else {
-                                // 只提取姓名與級數 (第一個空格前的姓名，後面的為級數)
+                                // 只提取姓名與級數
                                 let name = cellValue, group = '';
                                 const parts = cellValue.split(/\s+/);
                                 if (parts.length >= 2) {
@@ -605,7 +653,7 @@
                     
                     // 重建 allStudents
                     flatId = 0;
-                    this.allStudents = buildStudentList(newRows);
+                    this.allStudents = buildStudentList(newRows, this.fixedHeaders);
                     
                     // 重置請假相關
                     this.makeupRecords = [];
@@ -647,7 +695,7 @@
                 this.tableRows = JSON.parse(JSON.stringify(sampleRows));
                 this.quotas = initQuotas(this.fixedHeaders);
                 flatId = 0;
-                this.allStudents = buildStudentList(this.tableRows);
+                this.allStudents = buildStudentList(this.tableRows, this.fixedHeaders);
                 this.makeupRecords = [];
                 this.leaveHistory.push('↻ 已重置為內建範例');
                 this.syncStudents();
@@ -664,11 +712,7 @@
                 this.role = 'admin';
             }
             // 其餘初始化
-            this.allStudents = buildStudentList(this.tableRows);
-            // 更新學生的 className 使用當前表頭
-            this.allStudents.forEach(s => {
-                s.className = this.fixedHeaders[s.col];
-            });
+            this.allStudents = buildStudentList(this.tableRows, this.fixedHeaders);
             // 示範請假
             let demo = this.allStudents.find(s => s.name === '陳子元');
             if (demo) demo.leave = true;

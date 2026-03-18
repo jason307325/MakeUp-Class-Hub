@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>春季季學期 請假補課點名系統 (修正版)</title>
+    <title>春季季學期 請假補課點名系統</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
@@ -20,6 +20,8 @@
         .table-wrapper { overflow-x: auto; overflow-y: auto; border-radius: 20px; border: 1px solid #dde3ed; background: white; margin-bottom: 16px; max-height: 70vh; }
         table { border-collapse: collapse; min-width: 1000px; font-size: 0.8rem; }
         th { background: #f2f5f9; color: #1e2b3a; font-weight: 600; padding: 12px 4px; text-align: center; border-bottom: 2px solid #cfdbe8; position: sticky; top: 0; z-index: 1; }
+        th .th-label { font-size: 0.85rem; }
+        th .th-grades { font-size: 0.65rem; color: #4a6a85; margin-top: 2px; font-weight: 400; }
         td { padding: 6px 2px; border: 1px solid #e5eaf0; text-align: center; vertical-align: middle; min-width: 80px; }
         .student-name { font-weight: 500; color: #1e2b3a; font-size: 0.8rem; }
         .group-badge { display: inline-block; border-radius: 30px; padding: 2px 8px; font-size: 0.65rem; font-weight: 600; margin-left: 2px; }
@@ -32,7 +34,6 @@
         .status-leave { background: #d6f0d6 !important; }
 
         .quota-title-row td { background: #f0f5fa; font-weight: 700; color: #1e2b3a; text-align: center; font-size: 1rem; }
-
         .makeup-input { width: 90%; padding: 4px; border: 1px solid #bdc9d9; border-radius: 30px; text-align: center; font-size: 0.7rem; }
         .makeup-input:focus { outline: 2px solid #4a9eff; }
 
@@ -42,11 +43,15 @@
 
         .quota-panel { background: #f8fafd; border-radius: 20px; padding: 16px; border: 1px solid #dde3ed; margin-top: 16px; }
         .quota-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-start; }
-        .quota-item { background: white; border-radius: 16px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex: 1 1 160px; border: 1px solid #e9eef3; }
-        .quota-title { font-weight: 700; margin-bottom: 8px; color: #1e2b3a; border-bottom: 2px dashed #bdc9d9; padding-bottom: 4px; font-size: 0.8rem; word-break: break-word; }
+        .quota-item { background: white; border-radius: 16px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex: 1 1 170px; border: 1px solid #e9eef3; }
+        .quota-title { font-weight: 700; margin-bottom: 4px; color: #1e2b3a; border-bottom: 2px dashed #bdc9d9; padding-bottom: 4px; font-size: 0.85rem; word-break: break-word; }
+        .quota-grades-label { font-size: 0.7rem; color: #4a6a85; margin-bottom: 6px; }
         .quota-row { display: flex; justify-content: space-between; margin: 4px 0; font-size: 0.8rem; }
         .quota-value { font-weight: 700; color: #0066a0; }
         .admin-input { width: 60px; padding: 4px; border-radius: 30px; border: 1px solid #bdc9d9; text-align: center; font-size: 0.8rem; }
+        .grade-input { width: 100%; padding: 4px 8px; border-radius: 30px; border: 1px solid #bdc9d9; font-size: 0.75rem; margin-top: 4px; }
+        .grade-input:focus { outline: 2px solid #4a9eff; }
+        .grade-tag { display: inline-block; background: #dbeafe; color: #1d4ed8; border-radius: 20px; padding: 1px 7px; font-size: 0.65rem; font-weight: 600; margin: 1px; }
 
         .update-btn { background: #4a9eff; color: white; border: none; border-radius: 30px; padding: 4px 12px; font-weight: 600; cursor: pointer; font-size: 0.8rem; }
         .submit-btn { background: #34c759; color: white; border: none; padding: 8px 20px; border-radius: 40px; font-weight: 700; font-size: 0.9rem; margin-top: 12px; cursor: pointer; width: fit-content; box-shadow: 0 2px 6px rgba(52,199,89,0.3); }
@@ -65,6 +70,7 @@
         .form-card { background: white; border-radius: 24px; padding: 20px; border: 1px solid #dde3ed; margin-top: 16px; }
         .form-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; color: #1e2b3a; }
         .notice { background: #fff9e5; padding: 10px 16px; border-radius: 20px; color: #865d20; margin: 12px 0; border-left: 6px solid #f2c94c; font-size: 0.85rem; }
+        .info-notice { background: #e0f2fe; padding: 10px 16px; border-radius: 20px; color: #0369a1; margin: 12px 0; border-left: 6px solid #38bdf8; font-size: 0.85rem; }
         .flex-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .excel-upload { background: #e8f0fe; border-radius: 30px; padding: 16px; margin-top: 16px; border: 2px dashed #8aa9c9; }
         .file-input { padding: 6px; background: white; border-radius: 40px; width: 100%; font-size: 0.8rem; }
@@ -72,16 +78,24 @@
         .edit-mode-indicator { background: #ffe4b5; padding: 6px 12px; border-radius: 40px; display: inline-block; font-weight: 600; font-size: 0.8rem; }
         .edit-input { width: 100%; padding: 4px; border: 2px solid #4a9eff; border-radius: 20px; text-align: center; font-size: 0.8rem; }
         .mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
-        td.draggable { user-select: none; }
         td.dragging { opacity: 0.5; }
         td.drop-over { background: #cfe8ff; }
+
+        /* 程度設定區塊 */
+        .grades-editor { background: #f0fdf4; border-radius: 20px; padding: 16px; margin-top: 16px; border: 1px solid #86efac; }
+        .grades-editor h4 { margin: 0 0 10px; color: #166534; font-size: 0.95rem; }
+        .grades-col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .grades-col-item { background: white; border-radius: 14px; padding: 10px; border: 1px solid #bbf7d0; }
+        .grades-col-label { font-weight: 700; font-size: 0.8rem; color: #1e2b3a; margin-bottom: 4px; }
+        .grades-col-sub { font-size: 0.7rem; color: #4a6a85; margin-bottom: 6px; }
+        .grades-save-btn { background: #22c55e; color: white; border: none; border-radius: 30px; padding: 4px 14px; font-size: 0.78rem; font-weight: 600; cursor: pointer; margin-top: 6px; }
 
         @media (max-width: 600px) {
             h1 { font-size: 1.1rem; }
             .role-btn { padding: 4px 10px; font-size: 0.75rem; }
             .table-wrapper { max-height: 60vh; }
             td { min-width: 70px; }
-            .quota-item { flex: 1 1 130px; }
+            .quota-item { flex: 1 1 140px; }
             .submit-btn { padding: 6px 16px; font-size: 0.8rem; }
         }
     </style>
@@ -96,7 +110,7 @@
             <button class="role-btn" :class="{active: role==='admin'}" @click="role='admin'">⚙️ 後台</button>
         </div>
     </div>
-    <div class="subtitle">📅 依日期顯示可用時段｜每個時段＋日期獨立名單｜僅週一16:00(S1)有預設資料</div>
+    <div class="subtitle">📅 週一(3/16, 3/23)有預設班級程度名稱；其他日期欄位為通用名稱，由管理者設定程度</div>
 
     <!-- 主要表格 -->
     <div class="table-wrapper">
@@ -104,11 +118,18 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th v-for="(header, idx) in fixedHeaders" :key="idx"
-                        @click="handleHeaderClick(idx)"
-                        :class="{editable: role==='admin' && editMode}">
-                        <span v-if="!(role==='admin' && editMode && editingHeader === idx)">{{ header }}</span>
-                        <input v-else type="text" v-model="editingHeaderText" @blur="saveHeader" @keyup.enter="saveHeader" class="edit-input" autofocus>
+                    <th v-for="(colIdx) in 8" :key="colIdx-1">
+                        <!-- 欄位標題區 -->
+                        <div v-if="!(role==='admin' && editMode && editingHeader === colIdx-1)">
+                            <div class="th-label">{{ getColHeader(colIdx-1) }}</div>
+                            <!-- 允許程度標籤 (非週一時顯示) -->
+                            <div class="th-grades" v-if="!isMonday && getAllowedGrades(colIdx-1).length">
+                                {{ getAllowedGrades(colIdx-1).join('・') }}
+                            </div>
+                        </div>
+                        <input v-else type="text" v-model="editingHeaderText"
+                               @blur="saveHeader" @keyup.enter="saveHeader"
+                               class="edit-input" autofocus>
                     </th>
                 </tr>
             </thead>
@@ -150,7 +171,7 @@
                     <td>18</td>
                     <td v-for="(colIdx) in 8" :key="colIdx">
                         <input type="text" class="makeup-input"
-                               :placeholder="'可補: ' + getAvailable(colIdx-1)"
+                               :placeholder="getMakeupPlaceholder(colIdx-1)"
                                v-model="makeupInputs[colIdx-1]"
                                @keyup.enter="handleMakeupSubmit(colIdx-1)"
                                @blur="handleMakeupSubmit(colIdx-1)"
@@ -174,7 +195,7 @@
             <span class="tip" v-if="role==='parent'">👆 雙擊請假(綠)；第18行輸入「姓名 級別」登記補課</span>
             <span class="tip" v-if="role==='teacher'">👆 雙擊點名(黃)</span>
             <span class="tip" v-if="role==='admin' && !editMode">👆 開啟編輯模式可拖曳學生/修改表頭</span>
-            <span class="edit-mode-indicator" v-if="role==='admin' && editMode">✏️ 可拖曳學生到新位置，點學生可編輯</span>
+            <span class="edit-mode-indicator" v-if="role==='admin' && editMode">✏️ 編輯模式：可拖曳學生、點擊標題改名</span>
         </div>
         <div v-if="role==='admin'" class="mobile-actions">
             <button class="submit-btn" style="background:#ff9f4a;" @click="editMode = !editMode">
@@ -184,7 +205,7 @@
     </div>
 
     <!-- 時段選擇器 (管理後台) -->
-    <div v-if="role==='admin'" class="session-selector">
+    <div v-if="role==='admin'" class="session-selector" style="margin-top:12px;">
         <label for="adminSessionSelect">目前編輯時段：</label>
         <select id="adminSessionSelect" v-model="adminCurrentSession" @change="loadSessionData(adminCurrentSession)">
             <option v-for="s in sessionList" :key="s.code" :value="s.code">{{ s.code.replace('春','') }} {{ s.desc }}</option>
@@ -215,27 +236,57 @@
     <div v-if="role==='parent'" style="margin-top:16px;">
         <div style="font-weight:600; margin-bottom:6px;">📋 您已登記的補課 (點擊取消釋出名額)</div>
         <div class="registered-list">
-            <div v-for="rec in myMakeupRecords" :key="rec.id" class="registered-item">
-                <span>{{ rec.studentName }} ({{ rec.className }}) - {{ rec.dateStr }} {{ getSessionDisplay(rec.sessionCode) }}</span>
+            <div v-for="rec in makeupRecords" :key="rec.id" class="registered-item">
+                <span>{{ rec.studentName }} ({{ rec.studentGroup }}) - {{ rec.dateStr }} {{ getSessionDisplay(rec.sessionCode) }} 第{{ rec.colIdx+1 }}欄</span>
                 <button @click="cancelMakeup(rec)">取消</button>
             </div>
-            <div v-if="myMakeupRecords.length === 0" style="color:#999; text-align:center;">尚無登記</div>
+            <div v-if="makeupRecords.length === 0" style="color:#999; text-align:center;">尚無登記</div>
         </div>
     </div>
 
-    <!-- 後台補課名額調整 -->
+    <!-- 後台：補課名額調整 + 程度設定 -->
     <div class="quota-panel" v-if="role==='admin'">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-            <h3 style="font-size:1rem;">📊 後台調整補課名額 (目前: {{ currentDateLabel }} {{ getSessionDisplay(adminCurrentSession) }})</h3>
-        </div>
+        <h3 style="font-size:1rem; margin:0 0 12px;">
+            📊 補課名額 ＆ 允許程度設定
+            <small style="font-size:0.75rem; color:#4a6a85; font-weight:400;">
+                ({{ currentDateLabel }} {{ getSessionDisplay(adminCurrentSession) }})
+                <span v-if="isMonday" style="color:#22c55e; font-weight:600;">※週一：使用固定班級名稱，不需設定程度</span>
+                <span v-else style="color:#f59e0b; font-weight:600;">※非週一：請設定各欄位允許的程度，系統將據此驗證補課申請</span>
+            </small>
+        </h3>
         <div class="quota-grid">
-            <div v-for="(quota, key) in currentSessionData.quotas" :key="key" class="quota-item">
-                <div class="quota-title">{{ key }}</div>
-                <div class="quota-row"><span>🟢 可補</span> <span class="quota-value">{{ quota.available }}</span></div>
-                <div class="quota-row"><span>⏳ 候補</span> <span class="quota-value">{{ quota.waitlist }}</span></div>
+            <div v-for="(colIdx) in 8" :key="colIdx-1" class="quota-item">
+                <!-- 欄位標題 -->
+                <div class="quota-title">第{{ colIdx }}欄：{{ getColHeader(colIdx-1) }}</div>
+
+                <!-- 允許程度顯示 & 編輯 (非週一才顯示) -->
+                <div v-if="!isMonday">
+                    <div class="quota-grades-label">
+                        允許程度：
+                        <template v-if="getAllowedGrades(colIdx-1).length">
+                            <span v-for="g in getAllowedGrades(colIdx-1)" :key="g" class="grade-tag">{{ g }}</span>
+                        </template>
+                        <span v-else style="color:#aaa;">尚未設定</span>
+                    </div>
+                    <input type="text" class="grade-input"
+                           :placeholder="'如 2B3 或 2B,3R,3Y,3B'"
+                           :value="getGradeInputText(colIdx-1)"
+                           @change="setGradeInput(colIdx-1, $event.target.value)"
+                           @keyup.enter="saveAllowedGrades(colIdx-1, $event.target.value)">
+                    <div style="font-size:0.65rem; color:#6b7280; margin-top:2px;">
+                        輸入格式：2B3 → 2B,3R,3Y,3B ；或直接逗號分隔如 2R,2Y,3B<br>
+                        按 Enter 或儲存後生效
+                    </div>
+                    <button class="grades-save-btn" @click="saveAllowedGradesFromInput(colIdx-1)">✅ 儲存程度</button>
+                </div>
+                <div v-else class="quota-grades-label" style="color:#22c55e;">週一固定班級，程度由班級名稱決定</div>
+
+                <!-- 名額控制 -->
+                <div class="quota-row" style="margin-top:8px;"><span>🟢 可補</span> <span class="quota-value">{{ currentSessionData.quotas[colIdx-1].available }}</span></div>
+                <div class="quota-row"><span>⏳ 候補</span> <span class="quota-value">{{ currentSessionData.quotas[colIdx-1].waitlist }}</span></div>
                 <div class="flex-row" style="margin-top:8px;">
-                    <input type="number" min="0" class="admin-input" v-model.number="adminQuotaSettings[key]">
-                    <button class="update-btn" @click="updateQuota(key)">調整</button>
+                    <input type="number" min="0" class="admin-input" v-model.number="adminQuotaValues[colIdx-1]">
+                    <button class="update-btn" @click="updateQuota(colIdx-1)">調整</button>
                 </div>
             </div>
         </div>
@@ -243,8 +294,8 @@
 
     <!-- 後台管理介面 -->
     <div class="form-card" v-if="role==='admin'">
-        <div class="form-title">⚙️ 後台管理 (目前: {{ currentDateLabel }} {{ getSessionDisplay(adminCurrentSession) }})</div>
-        <div class="notice">🔧 每個「日期 + 時段」組合都是獨立資料。僅週一S1有預設名單，其餘時段預設為空白。</div>
+        <div class="form-title">⚙️ 後台管理 ({{ currentDateLabel }} {{ getSessionDisplay(adminCurrentSession) }})</div>
+        <div class="notice">🔧 每個「日期 + 時段」為獨立資料。僅週一S1有預設名單。非週一時段請於上方設定各欄允許的程度。</div>
 
         <div class="flex-row" style="margin-bottom:12px;">
             <div class="field" style="width:160px;">
@@ -255,26 +306,28 @@
         </div>
 
         <div class="excel-upload">
-            <div style="font-weight:600; margin-bottom:8px; font-size:0.9rem;">📥 上傳Excel (姓名 級數) 至目前時段</div>
+            <div style="font-weight:600; margin-bottom:8px; font-size:0.9rem;">📥 上傳Excel 至目前時段</div>
             <div class="flex-row">
-                <input type="file" class="file-input" accept=".xlsx, .xls, .csv" @change="handleExcelUpload">
+                <input type="file" class="file-input" accept=".xlsx,.xls,.csv" @change="handleExcelUpload">
                 <button class="submit-btn" style="background:#4a9eff; margin-top:0;" @click="downloadTemplate">📎 下載範例</button>
             </div>
         </div>
 
         <div class="flex-row" style="margin-top:16px;">
-            <button class="submit-btn special" @click="forceMakeup(fixedHeaders[0])">強制開放第一個班級+1</button>
+            <button class="submit-btn special" @click="forceMakeup(0)">強制開放第1欄名額+1</button>
             <button class="submit-btn" style="background:#4a9eff;" @click="simulateAutoSubstitute">🔄 模擬遞補</button>
-            <button class="submit-btn" style="background:#4a9eff;" @click="resetSessionToSample">↻ 重置目前時段為空白</button>
+            <button class="submit-btn" style="background:#4a9eff;" @click="resetSessionToEmpty">↻ 重置目前時段為空白</button>
         </div>
+
         <div style="margin-top:16px;">
             <h4 style="font-size:0.9rem;">快速開關請假</h4>
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap:6px; max-height:200px; overflow-y:auto;">
                 <div v-for="stu in currentSessionData.allStudents" :key="stu.id" style="background:#edf2f7; border-radius:40px; padding:4px 8px; display:flex; align-items:center; gap:4px;">
-                    <span style="font-size:0.7rem;">{{ stu.name }} <span :class="getBadgeClass(stu.group)" style="padding:2px 4px;">{{ stu.group }}</span></span>
+                    <span style="font-size:0.7rem;">{{ stu.name }} <span :class="'group-badge '+getBadgeClass(stu.group)">{{ stu.group }}</span></span>
                     <input type="checkbox" :checked="stu.leave" @change="toggleLeave(stu)" :id="'cb'+stu.id" style="transform:scale(0.8);">
                     <label :for="'cb'+stu.id" style="font-size:0.6rem;">請假</label>
                 </div>
+                <div v-if="currentSessionData.allStudents.length===0" style="color:#aaa; font-size:0.8rem;">此時段無學生</div>
             </div>
         </div>
     </div>
@@ -282,11 +335,19 @@
     <!-- 老師點名表單 -->
     <div class="form-card" v-if="role==='teacher'">
         <div class="form-title">📌 老師點名 (雙擊表格快速)</div>
-        <div class="form-grid" style="display:grid; grid-template-columns:1fr 2fr; gap:10px;">
-            <div class="field"><label>班級</label><select v-model="teacherForm.className"><option v-for="h in fixedHeaders" :value="h">{{ h }}</option></select></div>
-            <div class="field"><label>出席 (逗號分隔)</label><input v-model="teacherForm.presentStudents" placeholder="朱宓清, 許宸羽"></div>
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:10px;">
+            <div>
+                <label style="font-size:0.8rem;">欄位</label>
+                <select v-model="teacherForm.colIdx" style="width:100%; padding:6px; border-radius:30px; border:1px solid #bdc9d9;">
+                    <option v-for="c in 8" :value="c-1">第{{ c }}欄 {{ getColHeader(c-1) }}</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.8rem;">出席學生 (逗號分隔)</label>
+                <input v-model="teacherForm.presentStudents" placeholder="朱宓清, 許宸羽" style="width:100%; padding:6px; border-radius:30px; border:1px solid #bdc9d9;">
+            </div>
         </div>
-        <button class="submit-btn" @click="markPresent">💾 儲存點名</button>
+        <button class="submit-btn" @click="markPresent" style="margin-top:10px;">💾 儲存點名</button>
         <button class="submit-btn danger" @click="clearAllLeave">🗂️ 清除所有請假</button>
     </div>
 </div>
@@ -294,172 +355,210 @@
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
 <script>
 (function(){
-    const defaultHeaders = ["1RY鋼鐵人", "1B2R綠茶", "2YB小白", "3小馬", "4饅頭", "5+6阿軍", "7以上青蛙", "6+2老師"];
 
-    const classCodeMap = [
-        '1RY', '1B2R', '2YB', '3RYB', '4RYB', '5+6', '7↑', '6+2'
+    // ---------------------------------------------------------------
+    // 固定欄位 (週一用)
+    // ---------------------------------------------------------------
+    const MONDAY_HEADERS = [
+        "1RY鋼鐵人","1B2R綠茶","2YB小白","3小馬","4饅頭","5+6阿軍","7以上青蛙","6+2老師"
     ];
+    // 非週一的通用欄位名稱
+    const GENERIC_HEADERS = ["第1欄","第2欄","第3欄","第4欄","第5欄","第6欄","第7欄","第8欄"];
 
-    // 週一 S1 的原始學生名單
+    // 週一 3/16 和 3/23 的判定 (由 dateList 的 weekdayNum===1 決定)
+    const MONDAY_WEEKDAY = 1;
+
+    // ---------------------------------------------------------------
+    // 週一 S1 預設名單
+    // ---------------------------------------------------------------
     const monSampleRows = [
-        [ {name:'朱宓清',group:'1Y'}, {name:'陳子元',group:'2R'}, {name:'李恩燦',group:'2B'}, {name:'林章綺',group:'3Y'}, {name:'李羽程',group:'4B'}, {name:'周道',group:'5B'}, {name:'許諾',group:'7R*'}, {name:'3/2幼兒園加入',group:''} ],
-        [ {name:'許宸羽',group:'1Y'}, {name:'廖奕涵',group:'2R'}, {name:'黃培潔',group:'2B'}, {name:'鄭智允',group:'3R'}, {name:'顏樹祐',group:'4Y'}, {name:'黃湘芸',group:'5Y'}, {name:'顏語彤',group:'7B'}, null ],
-        [ {name:'柯丞軒',group:'1Y'}, {name:'林希',group:'1B'}, {name:'鄭鈞霖',group:'2Y'}, {name:'許芷瑄',group:'3R'}, {name:'沈芷旋',group:'4Y'}, {name:'詹筑婷',group:'5Y'}, {name:'徐家亮',group:'9R'}, {name:'史努比',group:''} ],
-        [ {name:'鮑家樽',group:'1Y'}, {name:'林有辰',group:'2R'}, {name:'白舒宇',group:'2Y'}, {name:'李恩禧',group:'3B'}, {name:'陳子陽',group:'4B'}, {name:'丁昀立',group:'5B'}, {name:'徐家陽',group:'9Y'}, {name:'青蛙',group:''} ],
-        [ {name:'卞禹澄',group:'1Y'}, {name:'汪悠嘉',group:'2R'}, {name:'邱奕嘉',group:'2B'}, {name:'李丞軒',group:'3Y'}, {name:'施瑞恩',group:'4Y'}, {name:'林瀚璇',group:'5Y'}, {name:'徐銘興',group:'6Y'}, {name:'阿軍2/23假',group:''} ],
-        [ {name:'沈瑄頤',group:'1R'}, null, {name:'李善旬',group:'2Y'}, {name:'陳巧霏',group:'3Y'}, {name:'謝凱權',group:'4R'}, {name:'丁巧亭',group:'5B'}, {name:'楊滢萱',group:'6Y'}, {name:'小馬一二四',group:''} ],
-        [ null, null, {name:'黃律綺',group:'2B'}, null, {name:'楊詞芝',group:'4R'}, {name:'張愛馨',group:'5Y'}, {name:'楊岳詠',group:'6Y'}, {name:'小白',group:''} ],
-        [ null, null, null, null, {name:'馬碩雍',group:'4Y'}, null, null, {name:'綠茶',group:''} ],
-        [ null, null, null, null, null, null, null, {name:'銅鐵人',group:''} ],
-        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
-        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
-        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
-        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
-        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
+        [{name:'朱宓清',group:'1Y'},{name:'陳子元',group:'2R'},{name:'李恩燦',group:'2B'},{name:'林章綺',group:'3Y'},{name:'李羽程',group:'4B'},{name:'周道',group:'5B'},{name:'許諾',group:'7R',star:true},{name:'3/2幼兒園加入',group:''}],
+        [{name:'許宸羽',group:'1Y'},{name:'廖奕涵',group:'2R'},{name:'黃培潔',group:'2B'},{name:'鄭智允',group:'3R'},{name:'顏樹祐',group:'4Y'},{name:'黃湘芸',group:'5Y'},{name:'顏語彤',group:'7B'},null],
+        [{name:'柯丞軒',group:'1Y'},{name:'林希',group:'1B'},{name:'鄭鈞霖',group:'2Y'},{name:'許芷瑄',group:'3R'},{name:'沈芷旋',group:'4Y'},{name:'詹筑婷',group:'5Y'},{name:'徐家亮',group:'9R'},{name:'史努比',group:''}],
+        [{name:'鮑家樽',group:'1Y'},{name:'林有辰',group:'2R'},{name:'白舒宇',group:'2Y'},{name:'李恩禧',group:'3B'},{name:'陳子陽',group:'4B'},{name:'丁昀立',group:'5B'},{name:'徐家陽',group:'9Y'},{name:'青蛙',group:''}],
+        [{name:'卞禹澄',group:'1Y'},{name:'汪悠嘉',group:'2R'},{name:'邱奕嘉',group:'2B'},{name:'李丞軒',group:'3Y'},{name:'施瑞恩',group:'4Y'},{name:'林瀚璇',group:'5Y'},{name:'徐銘興',group:'6Y'},{name:'阿軍2/23假',group:''}],
+        [{name:'沈瑄頤',group:'1R'},null,{name:'李善旬',group:'2Y'},{name:'陳巧霏',group:'3Y'},{name:'謝凱權',group:'4R'},{name:'丁巧亭',group:'5B'},{name:'楊滢萱',group:'6Y'},{name:'小馬一二四',group:''}],
+        [null,null,{name:'黃律綺',group:'2B'},null,{name:'楊詞芝',group:'4R'},{name:'張愛馨',group:'5Y'},{name:'楊岳詠',group:'6Y'},{name:'小白',group:''}],
+        [null,null,null,null,{name:'馬碩雍',group:'4Y'},null,null,{name:'綠茶',group:''}],
+        [null,null,null,null,null,null,null,{name:'銅鐵人',group:''}],
+        [null,null,null,null,null,null,null,{name:'饅頭 Sb',group:''}],
+        [null,null,null,null,null,null,null,{name:'饅頭 Sb',group:''}],
+        [null,null,null,null,null,null,null,{name:'饅頭 Sb',group:''}],
+        [null,null,null,null,null,null,null,{name:'饅頭 Sb',group:''}],
+        [null,null,null,null,null,null,null,{name:'饅頭 Sb',group:''}],
     ];
 
     // ---------------------------------------------------------------
-    // 時段定義
-    // 週日(0)：只保留 SA, SB, SC, SE, SF, SG（移除 SH）
+    // 時段定義 (週日只保留 SA~SG，無 SH)
     // ---------------------------------------------------------------
     const sessionDefinitions = [
-        { code: '春S1', desc: '16:00', weekdays: [1,3,4,5] },
-        { code: '春S2', desc: '17:30', weekdays: [1,2,3,4,5] },
-        { code: '春S3', desc: '18:50', weekdays: [1,2,3,4,5] },
-        { code: '春W',  desc: '14:00', weekdays: [3] },
-        { code: '春A',  desc: '08:00', weekdays: [6] },
-        { code: '春B',  desc: '09:40', weekdays: [6] },
-        { code: '春C',  desc: '11:00', weekdays: [6] },
-        { code: '春E',  desc: '13:50', weekdays: [6] },
-        { code: '春F',  desc: '15:30', weekdays: [6] },
-        { code: '春G',  desc: '17:10', weekdays: [6] },
-        { code: '春H',  desc: '18:40', weekdays: [6] },
-        { code: '春SA', desc: '08:00', weekdays: [0] },
-        { code: '春SB', desc: '09:40', weekdays: [0] },
-        { code: '春SC', desc: '11:00', weekdays: [0] },
-        { code: '春SE', desc: '13:50', weekdays: [0] },
-        { code: '春SF', desc: '15:30', weekdays: [0] },
-        { code: '春SG', desc: '17:10', weekdays: [0] },
-        // SH 已移除
+        {code:'春S1', desc:'16:00', weekdays:[1,3,4,5]},
+        {code:'春S2', desc:'17:30', weekdays:[1,2,3,4,5]},
+        {code:'春S3', desc:'18:50', weekdays:[1,2,3,4,5]},
+        {code:'春W',  desc:'14:00', weekdays:[3]},
+        {code:'春A',  desc:'08:00', weekdays:[6]},
+        {code:'春B',  desc:'09:40', weekdays:[6]},
+        {code:'春C',  desc:'11:00', weekdays:[6]},
+        {code:'春E',  desc:'13:50', weekdays:[6]},
+        {code:'春F',  desc:'15:30', weekdays:[6]},
+        {code:'春G',  desc:'17:10', weekdays:[6]},
+        {code:'春H',  desc:'18:40', weekdays:[6]},
+        {code:'春SA', desc:'08:00', weekdays:[0]},
+        {code:'春SB', desc:'09:40', weekdays:[0]},
+        {code:'春SC', desc:'11:00', weekdays:[0]},
+        {code:'春SE', desc:'13:50', weekdays:[0]},
+        {code:'春SF', desc:'15:30', weekdays:[0]},
+        {code:'春SG', desc:'17:10', weekdays:[0]},
     ];
 
     // ---------------------------------------------------------------
-    // 工具函式
+    // 工具：解析程度字串 → 允許程度陣列
+    // 支援：
+    //   "2B3"      → ["2B","3R","3Y","3B"]
+    //   "2B,3R"    → ["2B","3R"]
+    //   "1RY2R"    → ["1R","1Y","2R"]
+    // ---------------------------------------------------------------
+    function parseGradeString(str) {
+        if (!str || !str.trim()) return [];
+        str = str.trim();
+        let result = new Set();
+
+        // 先嘗試逗號分隔
+        const commaParts = str.split(/[,，、\s]+/).map(s => s.trim()).filter(s => s);
+
+        for (let part of commaParts) {
+            // 嘗試匹配 "數字+顏色+數字" 格式，如 2B3 代表 2B 和 3(RYB全)
+            // 或 "數字+多個顏色" 如 1RY 代表 1R, 1Y
+            // 支援格式：
+            //   純級數: 3  → 3R,3Y,3B
+            //   級數+顏色: 3R, 3RY, 3RYB
+            //   複合: 2B3 → 2B, 3R, 3Y, 3B
+            let remaining = part.toUpperCase();
+            let tokens = [];
+
+            // 反覆掃描 "數字+顏色?" 組合
+            const pattern = /(\d+)([RYB]*)/g;
+            let m;
+            while ((m = pattern.exec(remaining)) !== null) {
+                const level = m[1];
+                const colors = m[2] ? m[2].split('') : [];
+                if (colors.length === 0) {
+                    // 無顏色 → 全部 R, Y, B
+                    tokens.push(`${level}R`, `${level}Y`, `${level}B`);
+                } else {
+                    colors.forEach(c => tokens.push(`${level}${c}`));
+                }
+            }
+
+            tokens.forEach(t => result.add(t));
+        }
+
+        return [...result].sort((a, b) => {
+            const la = parseInt(a), lb = parseInt(b);
+            if (la !== lb) return la - lb;
+            return a.localeCompare(b);
+        });
+    }
+
+    // 驗證某個程度是否在允許清單內
+    function isGradeAllowed(groupRaw, allowedGrades) {
+        if (!allowedGrades || allowedGrades.length === 0) return true; // 未設定 → 不限制
+        const clean = groupRaw.replace(/\*/g, '').replace(/\s/g,'').toUpperCase();
+        // 取出 數字+顏色 部分
+        const m = clean.match(/^(\d+)([RYB]?)$/);
+        if (!m) return false;
+        const key = m[2] ? `${m[1]}${m[2]}` : null;
+        if (!key) return false;
+        return allowedGrades.includes(key);
+    }
+
+    // ---------------------------------------------------------------
+    // 資料建構工具
     // ---------------------------------------------------------------
     function buildFullTableRows(studentRows) {
         let rows = [];
         for (let i = 0; i < 14; i++) {
             rows.push(JSON.parse(JSON.stringify(studentRows[i] || [null,null,null,null,null,null,null,null])));
         }
-        for (let i = 0; i < 2; i++) rows.push([null,null,null,null,null,null,null,null]);
-        rows.push([null,null,null,null,null,null,null,null]); // 17
-        rows.push([null,null,null,null,null,null,null,null]); // 18
-        for (let i = 0; i < 5; i++) rows.push([null,null,null,null,null,null,null,null]);
+        for (let i = 0; i < 9; i++) rows.push([null,null,null,null,null,null,null,null]);
         return rows;
     }
 
-    function buildStudentList(tableRows, headers) {
-        let list = [], flatId = 0;
+    function buildStudentList(tableRows) {
+        let list = [], id = 0;
         for (let r = 0; r < 14; r++) {
-            for (let c = 0; c < tableRows[r].length; c++) {
-                let cell = tableRows[r][c];
+            for (let c = 0; c < 8; c++) {
+                let cell = tableRows[r] && tableRows[r][c];
                 if (cell && cell.name) {
                     let group = cell.group || '';
-                    let star = group.includes('*');
-                    let cleanGroup = group.replace('*', '');
-                    list.push({
-                        ...cell,
-                        group: cleanGroup,
-                        star,
-                        row: r, col: c,
-                        className: headers[c],
-                        id: flatId++,
-                        leave: false, present: false, leaveSessions: []
-                    });
+                    let star = !!(cell.star || group.includes('*'));
+                    let cleanGroup = group.replace(/\*/g,'');
+                    list.push({ name:cell.name, group:cleanGroup, star, row:r, col:c, id:id++, leave:false, present:false, leaveSessions:[] });
                 }
             }
         }
         return list;
     }
 
-    function initQuotas(headers) {
-        let q = {};
-        headers.forEach(h => { q[h] = { available: 0, waitlist: 0 }; });
-        return q;
+    function makeEmptyQuotas() {
+        // 8 個欄位的名額，以 index 為 key
+        return Array.from({length:8}, () => ({ available:0, waitlist:0 }));
     }
 
-    // ---------------------------------------------------------------
-    // ★ 核心修正：session key 包含日期，格式 "日期_時段碼"
-    //   例如 "3/16_春S1"、"3/17_春S2"
-    //   只有 "weekdayNum===1 的日期 + 春S1" 才預載名單
-    // ---------------------------------------------------------------
     function makeSessionKey(dateStr, sessionCode) {
         return `${dateStr}__${sessionCode}`;
     }
 
-    function createEmptySessionData(headers) {
-        let studentRows = [];
-        for (let i = 0; i < 14; i++) {
-            studentRows.push([null,null,null,null,null,null,null,null]);
-        }
+    function createEmptySession() {
+        let studentRows = Array.from({length:14}, () => [null,null,null,null,null,null,null,null]);
         let tableRows = buildFullTableRows(studentRows);
-        let allStudents = buildStudentList(tableRows, headers);
-        let quotas = initQuotas(headers);
-        // 所有非週一S1 的時段：名額全部預設為 0（清空）
-        return { tableRows, allStudents, quotas };
+        return {
+            tableRows,
+            allStudents: buildStudentList(tableRows),
+            quotas: makeEmptyQuotas(),
+            // allowedGrades[colIdx] = string[] 如 ["2B","3R","3Y","3B"]
+            // null 代表未設定（不驗證）
+            allowedGrades: Array.from({length:8}, () => null),
+            // 管理者輸入暫存
+            gradeInputs: Array.from({length:8}, () => ''),
+        };
     }
 
-    function createMonS1SessionData(headers) {
+    function createMonS1Session() {
         let studentRows = JSON.parse(JSON.stringify(monSampleRows));
         let tableRows = buildFullTableRows(studentRows);
-        let allStudents = buildStudentList(tableRows, headers);
-        let quotas = initQuotas(headers);
-        quotas['1RY鋼鐵人'].available = 0;
-        quotas['1B2R綠茶'].available = 2;
-        quotas['2YB小白'].available = 3;
-        quotas['3小馬'].available = 3;
-        quotas['4饅頭'].available = 3;
-        quotas['5+6阿軍'].available = 4;
-        quotas['7以上青蛙'].available = 4;
-        quotas['6+2老師'].available = 0;
-        return { tableRows, allStudents, quotas };
-    }
-
-    function isGroupAllowedForClass(group, classIndex) {
-        if (!group) return false;
-        group = group.replace('*', '');
-        const match = group.match(/^(\d+)([RYB])?$/);
-        if (!match) return false;
-        const level = parseInt(match[1]);
-        const color = match[2] || '';
-        const classCode = classCodeMap[classIndex];
-        if (!classCode) return false;
-        if (classCode === '1RY')  return level === 1 && (color === 'R' || color === 'Y');
-        if (classCode === '1B2R') return (level === 1 && color === 'B') || (level === 2 && color === 'R');
-        if (classCode === '2YB')  return level === 2 && (color === 'Y' || color === 'B');
-        if (classCode === '3RYB') return level === 3;
-        if (classCode === '4RYB') return level === 4;
-        if (classCode === '5+6')  return (level === 5 || level === 6);
-        if (classCode === '7↑')   return level >= 7;
-        return false;
+        let quotas = makeEmptyQuotas();
+        // 預設名額
+        quotas[0].available = 0;
+        quotas[1].available = 2;
+        quotas[2].available = 3;
+        quotas[3].available = 3;
+        quotas[4].available = 3;
+        quotas[5].available = 4;
+        quotas[6].available = 4;
+        quotas[7].available = 0;
+        return {
+            tableRows,
+            allStudents: buildStudentList(tableRows),
+            quotas,
+            allowedGrades: Array.from({length:8}, () => null),
+            gradeInputs: Array.from({length:8}, () => ''),
+        };
     }
 
     // ---------------------------------------------------------------
-    // Vue App
+    // Vue
     // ---------------------------------------------------------------
     new Vue({
         el: '#app',
         data: {
             role: 'parent',
-            fixedHeaders: [...defaultHeaders],
-            // sessionsData：key = "dateStr__sessionCode"，懶初始化
-            sessionsData: {},
+            sessionsData: {},           // key: "dateStr__sessionCode"
             currentSessionCode: '春S1',
             adminCurrentSession: '春S1',
-            makeupInputs: ['','','','','','','',''],
-            adminQuotaSettings: {},
-            teacherForm: { className: defaultHeaders[0], presentStudents: '' },
-            leaveHistory: [],
+            makeupInputs: Array(8).fill(''),
+            adminQuotaValues: Array(8).fill(0),
+            teacherForm: { colIdx: 0, presentStudents: '' },
             startDateInput: '2026-03-16',
             dateList: [],
             sessionList: sessionDefinitions,
@@ -471,73 +570,191 @@
             dragSource: null,
         },
         computed: {
-            currentDate() {
-                return this.dateList[this.currentDateIndex]?.dateStr || '';
-            },
-            currentWeekday() {
-                return this.dateList[this.currentDateIndex]?.weekdayNum ?? -1;
-            },
+            currentDate() { return this.dateList[this.currentDateIndex]?.dateStr || ''; },
+            currentWeekday() { return this.dateList[this.currentDateIndex]?.weekdayNum ?? -1; },
             currentDateLabel() {
                 let d = this.dateList[this.currentDateIndex];
                 return d ? `${d.dateStr}(${d.weekday})` : '';
             },
-            currentKey() {
-                return makeSessionKey(this.currentDate, this.currentSessionCode);
-            },
-            currentSessionData() {
-                return this.getOrCreateSessionData(this.currentDate, this.currentSessionCode);
-            },
+            // 是否為週一
+            isMonday() { return this.currentWeekday === MONDAY_WEEKDAY; },
+            currentKey() { return makeSessionKey(this.currentDate, this.currentSessionCode); },
+            currentSessionData() { return this.getOrCreate(this.currentDate, this.currentSessionCode); },
             filteredSessionList() {
                 if (this.currentWeekday < 0) return this.sessionList;
                 return this.sessionList.filter(s => s.weekdays.includes(this.currentWeekday));
             },
-            myMakeupRecords() {
-                return this.makeupRecords;
-            }
         },
         watch: {
-            currentSessionCode(newCode) {
-                this.makeupInputs = ['','','','','','','',''];
-                this.adminCurrentSession = newCode;
-                this.syncAdminQuotaSettings();
+            currentKey() {
+                this.makeupInputs = Array(8).fill('');
+                this.adminCurrentSession = this.currentSessionCode;
+                this.syncAdminValues();
             },
             currentDateIndex() {
                 const filtered = this.filteredSessionList;
                 if (filtered.length > 0 && !filtered.some(s => s.code === this.currentSessionCode)) {
                     this.currentSessionCode = filtered[0].code;
                 }
-                this.syncAdminQuotaSettings();
             }
         },
         methods: {
-            // ★ 懶初始化：第一次存取時才建立資料
-            getOrCreateSessionData(dateStr, sessionCode) {
-                if (!dateStr) return createEmptySessionData(this.fixedHeaders);
+            // ---- 資料存取 ----
+            getOrCreate(dateStr, sessionCode) {
+                if (!dateStr) return createEmptySession();
                 const key = makeSessionKey(dateStr, sessionCode);
                 if (!this.sessionsData[key]) {
-                    // 找出該日期是週幾
                     const dateEntry = this.dateList.find(d => d.dateStr === dateStr);
-                    const isMonday = dateEntry && dateEntry.weekdayNum === 1;
-                    const isS1 = sessionCode === '春S1';
-                    const data = (isMonday && isS1)
-                        ? createMonS1SessionData(this.fixedHeaders)
-                        : createEmptySessionData(this.fixedHeaders);
-                    this.$set(this.sessionsData, key, data);
+                    const isM = dateEntry && dateEntry.weekdayNum === MONDAY_WEEKDAY;
+                    this.$set(this.sessionsData, key, (isM && sessionCode === '春S1') ? createMonS1Session() : createEmptySession());
                 }
                 return this.sessionsData[key];
             },
-            syncAdminQuotaSettings() {
-                const quotas = this.currentSessionData.quotas;
-                const newSettings = {};
-                Object.keys(quotas).forEach(key => {
-                    newSettings[key] = quotas[key].available;
+            syncAdminValues() {
+                const q = this.currentSessionData.quotas;
+                this.adminQuotaValues = q.map(x => x.available);
+            },
+
+            // ---- 欄位標題邏輯 ----
+            getColHeader(colIdx) {
+                if (this.isMonday) return MONDAY_HEADERS[colIdx] || `第${colIdx+1}欄`;
+                return GENERIC_HEADERS[colIdx] || `第${colIdx+1}欄`;
+            },
+            // 允許程度陣列
+            getAllowedGrades(colIdx) {
+                return this.currentSessionData.allowedGrades[colIdx] || [];
+            },
+            getGradeInputText(colIdx) {
+                return this.currentSessionData.gradeInputs[colIdx] || '';
+            },
+            setGradeInput(colIdx, val) {
+                this.$set(this.currentSessionData.gradeInputs, colIdx, val);
+            },
+            saveAllowedGrades(colIdx, inputStr) {
+                const grades = parseGradeString(inputStr);
+                this.$set(this.currentSessionData.allowedGrades, colIdx, grades.length ? grades : null);
+                this.$set(this.currentSessionData.gradeInputs, colIdx, inputStr);
+            },
+            saveAllowedGradesFromInput(colIdx) {
+                const inputStr = this.currentSessionData.gradeInputs[colIdx] || '';
+                this.saveAllowedGrades(colIdx, inputStr);
+                const grades = this.currentSessionData.allowedGrades[colIdx];
+                alert(grades && grades.length
+                    ? `第${colIdx+1}欄允許程度已設為：${grades.join('、')}`
+                    : `第${colIdx+1}欄程度已清空（不限制）`);
+            },
+
+            // ---- 補課名額 ----
+            getMakeupPlaceholder(colIdx) {
+                const avail = this.currentSessionData.quotas[colIdx].available;
+                const grades = this.getAllowedGrades(colIdx);
+                if (!this.isMonday && grades.length) {
+                    return `可補:${avail} [${grades.join(',')}]`;
+                }
+                return `可補: ${avail}`;
+            },
+            getAvailable(colIdx) {
+                return this.currentSessionData.quotas[colIdx]?.available || 0;
+            },
+            updateQuota(colIdx) {
+                const val = this.adminQuotaValues[colIdx];
+                if (val !== undefined && val >= 0) {
+                    this.currentSessionData.quotas[colIdx].available = val;
+                    this.$forceUpdate();
+                }
+            },
+
+            // ---- 補課登記 ----
+            handleMakeupSubmit(colIdx) {
+                if (this.role !== 'parent') return;
+                const input = this.makeupInputs[colIdx];
+                if (!input || !input.trim()) return;
+
+                const parts = input.trim().split(/\s+/);
+                if (parts.length < 2) {
+                    alert('請輸入「姓名 級別」，例如 朱宓清 1Y');
+                    this.makeupInputs[colIdx] = ''; return;
+                }
+                const name = parts[0];
+                const groupRaw = parts[1].replace(/\*/g, '');
+
+                // ★ 程度驗證
+                if (!this.isMonday) {
+                    const allowedGrades = this.getAllowedGrades(colIdx);
+                    if (allowedGrades && allowedGrades.length > 0) {
+                        if (!isGradeAllowed(groupRaw, allowedGrades)) {
+                            alert(`⚠️ 程度不符！\n您輸入的級別「${groupRaw}」不在第${colIdx+1}欄的允許範圍內。\n\n此欄允許的程度為：\n${allowedGrades.join('、')}\n\n請確認後重新輸入。`);
+                            this.makeupInputs[colIdx] = ''; return;
+                        }
+                    }
+                } else {
+                    // 週一：用原始班級對應邏輯驗證
+                    if (!this.isGradeAllowedForMonday(groupRaw, colIdx)) {
+                        alert(`⚠️ 程度不符！\n級別「${groupRaw}」不符合此班級（${this.getColHeader(colIdx)}）的規定。`);
+                        this.makeupInputs[colIdx] = ''; return;
+                    }
+                }
+
+                // 檢查配額
+                const quota = this.currentSessionData.quotas[colIdx];
+                if (!quota || quota.available <= 0) {
+                    alert('該欄位目前無可補名額');
+                    this.makeupInputs[colIdx] = ''; return;
+                }
+
+                // 檢查重複
+                const dupKey = `${this.currentDate}_${this.currentSessionCode}_${colIdx}_${name}_${groupRaw}`;
+                if (this.makeupRecords.some(r => r.dupKey === dupKey)) {
+                    alert('已登記過此時段此欄位補課');
+                    this.makeupInputs[colIdx] = ''; return;
+                }
+
+                quota.available -= 1;
+                this.makeupRecords.push({
+                    id: Date.now() + Math.random(),
+                    dupKey,
+                    studentName: name,
+                    studentGroup: groupRaw,
+                    colIdx,
+                    dateStr: this.currentDate,
+                    sessionCode: this.currentSessionCode,
                 });
-                this.adminQuotaSettings = newSettings;
+                this.makeupInputs[colIdx] = '';
+                this.$forceUpdate();
+            },
+            // 週一固定班級程度驗證（原邏輯）
+            isGradeAllowedForMonday(group, colIdx) {
+                const MAPS = [
+                    g => /^1[RY]$/.test(g),
+                    g => /^1B$/.test(g) || /^2R$/.test(g),
+                    g => /^2[YB]$/.test(g),
+                    g => /^3[RYB]$/.test(g),
+                    g => /^4[RYB]$/.test(g),
+                    g => /^[56][RYB]$/.test(g),
+                    g => /^[789]\d*[RYB]?$/.test(g) || parseInt(g) >= 7,
+                    g => false,
+                ];
+                const fn = MAPS[colIdx];
+                return fn ? fn(group.toUpperCase()) : false;
+            },
+            cancelMakeup(rec) {
+                this.currentSessionData.quotas[rec.colIdx].available += 1;
+                this.makeupRecords = this.makeupRecords.filter(r => r.id !== rec.id);
+                this.$forceUpdate();
+            },
+
+            // ---- 顯示工具 ----
+            getSessionDisplay(code) {
+                let s = this.sessionList.find(s => s.code === code);
+                return s ? `${s.code.replace('春','')} ${s.desc}` : code;
+            },
+            isSessionAvailable(code) {
+                return this.filteredSessionList.some(s => s.code === code);
             },
             getBadgeClass(group) {
                 if (!group) return 'default';
-                const match = group.match(/[RYB]$/);
-                return match ? match[0] : 'default';
+                const m = group.match(/[RYB]$/);
+                return m ? m[0] : 'default';
             },
             getCellClass(cell, row, col) {
                 if (!cell) return '';
@@ -547,24 +764,8 @@
                 if (found.present) return 'status-present';
                 return '';
             },
-            syncStudents() {
-                this.currentSessionData.allStudents.forEach(s => {
-                    let cell = this.currentSessionData.tableRows[s.row]?.[s.col];
-                    if (cell) { cell.leave = s.leave; cell.present = s.present; }
-                });
-                this.$forceUpdate();
-            },
-            getAvailable(colIdx) {
-                const className = this.fixedHeaders[colIdx];
-                return this.currentSessionData.quotas[className]?.available || 0;
-            },
-            getSessionDisplay(code) {
-                let s = this.sessionList.find(s => s.code === code);
-                return s ? `${s.code.replace('春','')} ${s.desc}` : code;
-            },
-            isSessionAvailable(code) {
-                return this.filteredSessionList.some(s => s.code === code);
-            },
+
+            // ---- 日期/時段切換 ----
             changeDate(idx) {
                 this.currentDateIndex = idx;
                 const filtered = this.filteredSessionList;
@@ -572,129 +773,27 @@
                     this.currentSessionCode = filtered[0].code;
                 }
             },
-            selectSession(code) {
-                this.currentSessionCode = code;
+            selectSession(code) { this.currentSessionCode = code; },
+            loadSessionData(code) { this.currentSessionCode = code; },
+
+            // ---- 編輯表頭 (週一才有意義，非週一顯示通用名) ----
+            handleHeaderClick(idx) {
+                if (!(this.role === 'admin' && this.editMode && this.isMonday)) return;
+                this.editingHeader = idx;
+                this.editingHeaderText = MONDAY_HEADERS[idx];
             },
-            loadSessionData(code) {
-                this.currentSessionCode = code;
+            saveHeader() {
+                // 目前不允許修改靜態標題，關閉即可
+                this.editingHeader = null;
             },
-            copyFromCurrentSession() {
-                const index = this.sessionList.findIndex(s => s.code === this.adminCurrentSession);
-                if (index > 0) {
-                    const prevCode = this.sessionList[index-1].code;
-                    const prevKey = makeSessionKey(this.currentDate, prevCode);
-                    const prevData = this.sessionsData[prevKey] || createEmptySessionData(this.fixedHeaders);
-                    const newTableRows = JSON.parse(JSON.stringify(prevData.tableRows));
-                    const newAllStudents = buildStudentList(newTableRows, this.fixedHeaders);
-                    const newQuotas = JSON.parse(JSON.stringify(prevData.quotas));
-                    this.$set(this.sessionsData, this.currentKey, {
-                        tableRows: newTableRows, allStudents: newAllStudents, quotas: newQuotas
-                    });
-                    this.syncStudents();
-                    alert(`已將 ${prevCode} 的資料複製到 ${this.adminCurrentSession} (${this.currentDate})`);
-                } else {
-                    alert('沒有上一個時段');
-                }
-            },
-            handleMakeupSubmit(colIdx) {
-                if (this.role !== 'parent') return;
-                const input = this.makeupInputs[colIdx];
-                if (!input || !input.trim()) return;
-                const parts = input.trim().split(/\s+/);
-                if (parts.length < 2) { alert('請輸入「姓名 級別」，例如 朱宓清 1Y'); this.makeupInputs[colIdx]=''; return; }
-                const name = parts[0], groupRaw = parts[1];
-                const student = this.currentSessionData.allStudents.find(s => s.name === name && s.group === groupRaw.replace('*',''));
-                if (!student) { alert('找不到該學生，請確認姓名和級別'); this.makeupInputs[colIdx]=''; return; }
-                if (!isGroupAllowedForClass(groupRaw, colIdx)) { alert(`此學生級別 (${groupRaw}) 不能在班級 ${this.fixedHeaders[colIdx]} 登記補課`); this.makeupInputs[colIdx]=''; return; }
-                if (student.leaveSessions && student.leaveSessions.includes(`${this.currentDate}_${this.currentSessionCode}`)) { alert('此學生已在該時段請假，不可補課'); this.makeupInputs[colIdx]=''; return; }
-                if (this.makeupRecords.some(r => r.studentId === student.id && r.dateStr === this.currentDate && r.sessionCode === this.currentSessionCode)) { alert('已登記過該時段補課'); this.makeupInputs[colIdx]=''; return; }
-                const quota = this.currentSessionData.quotas[student.className];
-                if (!quota || quota.available <= 0) { alert('該班級目前無可補名額'); this.makeupInputs[colIdx]=''; return; }
-                quota.available -= 1;
-                this.makeupRecords.push({ id: Date.now()+Math.random(), studentId: student.id, studentName: student.name, className: student.className, dateStr: this.currentDate, sessionCode: this.currentSessionCode });
-                this.makeupInputs[colIdx] = '';
-            },
-            cancelMakeup(rec) {
-                let student = this.currentSessionData.allStudents.find(s => s.id === rec.studentId);
-                if (student) {
-                    let quota = this.currentSessionData.quotas[student.className];
-                    if (quota) quota.available += 1;
-                }
-                this.makeupRecords = this.makeupRecords.filter(r => r.id !== rec.id);
-            },
-            handleDragStart(event, row, col) {
-                if (this.role !== 'admin' || !this.editMode || row >= 16) return;
-                this.dragSource = { row, col };
-                event.dataTransfer.setData('text/plain', `${row},${col}`);
-                event.target.classList.add('dragging');
-            },
-            handleDrop(event, targetRow, targetCol) {
-                event.preventDefault();
-                event.target.classList.remove('drop-over');
-                if (this.role !== 'admin' || !this.editMode || !this.dragSource) return;
-                if (targetRow >= 16) return;
-                const source = this.dragSource;
-                if (source.row === targetRow && source.col === targetCol) { this.dragSource = null; return; }
-                let sourceCell = this.currentSessionData.tableRows[source.row][source.col];
-                let targetCell = this.currentSessionData.tableRows[targetRow][targetCol];
-                if (!sourceCell) return;
-                if (targetCell) {
-                    this.currentSessionData.tableRows[targetRow][targetCol] = sourceCell;
-                    this.currentSessionData.tableRows[source.row][source.col] = targetCell;
-                    let ss = this.currentSessionData.allStudents.find(s => s.row === source.row && s.col === source.col);
-                    let ts = this.currentSessionData.allStudents.find(s => s.row === targetRow && s.col === targetCol);
-                    if (ss) { ss.row = targetRow; ss.col = targetCol; ss.className = this.fixedHeaders[targetCol]; }
-                    if (ts) { ts.row = source.row; ts.col = source.col; ts.className = this.fixedHeaders[source.col]; }
-                } else {
-                    this.currentSessionData.tableRows[targetRow][targetCol] = sourceCell;
-                    this.currentSessionData.tableRows[source.row][source.col] = null;
-                    let ss = this.currentSessionData.allStudents.find(s => s.row === source.row && s.col === source.col);
-                    if (ss) { ss.row = targetRow; ss.col = targetCol; ss.className = this.fixedHeaders[targetCol]; }
-                }
-                this.syncStudents();
-                this.dragSource = null;
-            },
-            handleDragEnd(event) {
-                event.target.classList.remove('dragging');
-                this.dragSource = null;
-            },
-            handleCellClick(cell, row, col, event) {
-                if (row >= 16) return;
-                if (this.role === 'admin' && this.editMode && cell && !event.target.draggable) {
-                    let newName = prompt('編輯學生：輸入「姓名 級數」或留空刪除', `${cell.name} ${cell.group}`);
-                    if (newName === null) return;
-                    if (newName.trim() === '') {
-                        this.deleteStudent(row, col);
-                    } else {
-                        let parts = newName.trim().split(/\s+/);
-                        let name = parts[0], group = parts.length > 1 ? parts[1] : '';
-                        let star = group.includes('*'), cleanGroup = group.replace('*','');
-                        this.currentSessionData.tableRows[row][col] = { name, group: cleanGroup, star };
-                        let student = this.currentSessionData.allStudents.find(s => s.row === row && s.col === col);
-                        if (student) { student.name = name; student.group = cleanGroup; student.star = star; }
-                        else {
-                            this.currentSessionData.allStudents.push({ name, group: cleanGroup, star, row, col, className: this.fixedHeaders[col], id: this.currentSessionData.allStudents.length, leave: false, present: false, leaveSessions: [] });
-                        }
-                        this.syncStudents();
-                    }
-                }
-            },
-            deleteStudent(row, col) {
-                this.currentSessionData.tableRows[row][col] = null;
-                this.currentSessionData.allStudents = this.currentSessionData.allStudents.filter(s => !(s.row === row && s.col === col));
-                this.syncStudents();
-            },
-            handleDoubleClick(cell, row, col) {
-                if (row >= 16 || !cell) return;
-                let student = this.currentSessionData.allStudents.find(s => s.row === row && s.col === col);
-                if (!student) return;
-                if (this.role === 'parent') {
-                    if (!this.currentDate || !this.currentSessionCode) { alert('請先選擇日期與時段'); return; }
-                    if (student.leave) { alert('已請假'); return; }
-                    this.setStudentLeave(student, true, this.currentDate, this.currentSessionCode);
-                } else if (this.role === 'teacher') {
-                    this.setStudentPresent(student, !student.present);
-                }
+
+            // ---- 學生操作 ----
+            syncStudents() {
+                this.currentSessionData.allStudents.forEach(s => {
+                    let cell = this.currentSessionData.tableRows[s.row]?.[s.col];
+                    if (cell) { cell.leave = s.leave; cell.present = s.present; }
+                });
+                this.$forceUpdate();
             },
             setStudentLeave(stu, leave, dateStr, sessionCode) {
                 if (stu.leave === leave) return;
@@ -704,11 +803,9 @@
                     stu.present = false;
                     if (!stu.leaveSessions) stu.leaveSessions = [];
                     stu.leaveSessions.push(`${dateStr}_${sessionCode}`);
-                    let quota = this.currentSessionData.quotas[stu.className];
-                    if (quota) quota.available += 1;
+                    this.currentSessionData.quotas[stu.col].available += 1;
                 } else {
-                    let quota = this.currentSessionData.quotas[stu.className];
-                    if (quota && oldLeave) quota.available = Math.max(0, quota.available - 1);
+                    if (oldLeave) this.currentSessionData.quotas[stu.col].available = Math.max(0, this.currentSessionData.quotas[stu.col].available - 1);
                 }
                 this.syncStudents();
             },
@@ -718,136 +815,173 @@
                 if (present) stu.leave = false;
                 this.syncStudents();
             },
+            toggleLeave(stu) {
+                if (stu.leave) { this.setStudentLeave(stu, false); }
+                else { stu.leave = true; stu.present = false; this.currentSessionData.quotas[stu.col].available += 1; this.syncStudents(); }
+            },
+            handleDoubleClick(cell, row, col) {
+                if (row >= 16 || !cell) return;
+                let student = this.currentSessionData.allStudents.find(s => s.row === row && s.col === col);
+                if (!student) return;
+                if (this.role === 'parent') {
+                    if (!this.currentDate) { alert('請先選擇日期'); return; }
+                    if (student.leave) { alert('已請假'); return; }
+                    this.setStudentLeave(student, true, this.currentDate, this.currentSessionCode);
+                } else if (this.role === 'teacher') {
+                    this.setStudentPresent(student, !student.present);
+                }
+            },
+            handleCellClick(cell, row, col, event) {
+                if (row >= 16 || !(this.role === 'admin' && this.editMode)) return;
+                if (!cell) return;
+                let newName = prompt('編輯學生：輸入「姓名 級數」或留空刪除', `${cell.name} ${cell.group}`);
+                if (newName === null) return;
+                if (!newName.trim()) { this.deleteStudent(row, col); return; }
+                let parts = newName.trim().split(/\s+/);
+                let name = parts[0], group = (parts[1]||'').replace(/\*/g,''), star = (parts[1]||'').includes('*');
+                this.currentSessionData.tableRows[row][col] = { name, group, star };
+                let stu = this.currentSessionData.allStudents.find(s => s.row===row && s.col===col);
+                if (stu) { stu.name=name; stu.group=group; stu.star=star; }
+                else { this.currentSessionData.allStudents.push({ name,group,star,row,col,id:this.currentSessionData.allStudents.length,leave:false,present:false,leaveSessions:[] }); }
+                this.syncStudents();
+            },
+            deleteStudent(row, col) {
+                this.currentSessionData.tableRows[row][col] = null;
+                this.currentSessionData.allStudents = this.currentSessionData.allStudents.filter(s => !(s.row===row && s.col===col));
+                this.syncStudents();
+            },
+            addStudent(row, col) {
+                if (row >= 16) return;
+                let n = prompt('新增學生：「姓名 級數」');
+                if (!n) return;
+                let parts = n.trim().split(/\s+/);
+                let name=parts[0], group=(parts[1]||'').replace(/\*/g,''), star=(parts[1]||'').includes('*');
+                this.currentSessionData.tableRows[row][col] = {name,group,star};
+                this.currentSessionData.allStudents.push({name,group,star,row,col,id:this.currentSessionData.allStudents.length,leave:false,present:false,leaveSessions:[]});
+                this.syncStudents();
+            },
+
+            // ---- 拖曳 ----
+            handleDragStart(event, row, col) {
+                if (!(this.role==='admin' && this.editMode) || row>=16) return;
+                this.dragSource = {row,col};
+                event.dataTransfer.setData('text/plain',`${row},${col}`);
+                event.target.classList.add('dragging');
+            },
+            handleDrop(event, tr, tc) {
+                event.preventDefault();
+                if (!(this.role==='admin' && this.editMode) || !this.dragSource || tr>=16) return;
+                const {row:sr,col:sc} = this.dragSource;
+                if (sr===tr && sc===tc) { this.dragSource=null; return; }
+                let src = this.currentSessionData.tableRows[sr][sc];
+                let tgt = this.currentSessionData.tableRows[tr][tc];
+                if (!src) return;
+                this.currentSessionData.tableRows[tr][tc] = src;
+                this.currentSessionData.tableRows[sr][sc] = tgt || null;
+                let ss = this.currentSessionData.allStudents.find(s=>s.row===sr&&s.col===sc);
+                let ts = this.currentSessionData.allStudents.find(s=>s.row===tr&&s.col===tc);
+                if (ss) { ss.row=tr; ss.col=tc; }
+                if (ts) { ts.row=sr; ts.col=sc; }
+                this.syncStudents();
+                this.dragSource=null;
+            },
+            handleDragEnd(e) { e.target.classList.remove('dragging'); this.dragSource=null; },
+
+            // ---- 點名 ----
             markPresent() {
-                let { className, presentStudents } = this.teacherForm;
-                presentStudents.split(',').map(s => s.trim()).filter(s => s).forEach(n => {
-                    let stu = this.currentSessionData.allStudents.find(s => s.name === n && s.className === className);
+                let { colIdx, presentStudents } = this.teacherForm;
+                presentStudents.split(',').map(s=>s.trim()).filter(s=>s).forEach(n => {
+                    let stu = this.currentSessionData.allStudents.find(s=>s.name===n && s.col===colIdx);
                     if (stu) this.setStudentPresent(stu, true);
                 });
             },
             clearAllLeave() {
-                this.currentSessionData.allStudents.forEach(s => { s.leave = false; s.present = false; s.leaveSessions = []; });
-                for (let key in this.currentSessionData.quotas) {
-                    this.currentSessionData.quotas[key].available = 0;
-                    this.currentSessionData.quotas[key].waitlist = 0;
-                }
+                this.currentSessionData.allStudents.forEach(s=>{ s.leave=false; s.present=false; s.leaveSessions=[]; });
+                this.currentSessionData.quotas.forEach(q=>{ q.available=0; q.waitlist=0; });
                 this.makeupRecords = [];
                 this.syncStudents();
             },
-            toggleLeave(stu) {
-                if (stu.leave) {
-                    this.setStudentLeave(stu, false);
-                } else {
-                    stu.leave = true; stu.present = false;
-                    let quota = this.currentSessionData.quotas[stu.className];
-                    if (quota) quota.available += 1;
-                    this.syncStudents();
-                }
-            },
-            updateQuota(key) {
-                let val = this.adminQuotaSettings[key];
-                if (val !== undefined && val >= 0) {
-                    this.currentSessionData.quotas[key].available = val;
-                }
-            },
+
+            // ---- 後台其他 ----
+            forceMakeup(colIdx) { this.currentSessionData.quotas[colIdx].available += 1; this.$forceUpdate(); },
             simulateAutoSubstitute() {
-                for (let key in this.currentSessionData.quotas) {
-                    let q = this.currentSessionData.quotas[key];
-                    while (q.available > 0 && q.waitlist > 0) { q.available -= 1; q.waitlist -= 1; }
-                }
+                this.currentSessionData.quotas.forEach(q => {
+                    while (q.available > 0 && q.waitlist > 0) { q.available--; q.waitlist--; }
+                });
             },
-            forceMakeup(className) {
-                if (this.currentSessionData.quotas[className]) {
-                    this.currentSessionData.quotas[className].available += 1;
-                }
+            copyFromCurrentSession() {
+                const idx = this.sessionList.findIndex(s=>s.code===this.adminCurrentSession);
+                if (idx > 0) {
+                    const prevCode = this.sessionList[idx-1].code;
+                    const prevKey = makeSessionKey(this.currentDate, prevCode);
+                    const prev = this.sessionsData[prevKey] || createEmptySession();
+                    const clone = JSON.parse(JSON.stringify(prev));
+                    clone.allStudents = buildStudentList(clone.tableRows);
+                    this.$set(this.sessionsData, this.currentKey, clone);
+                    this.syncAdminValues();
+                    alert(`已複製 ${prevCode} 資料至 ${this.adminCurrentSession} (${this.currentDate})`);
+                } else { alert('沒有上一個時段'); }
             },
+            resetSessionToEmpty() {
+                this.$set(this.sessionsData, this.currentKey, createEmptySession());
+                this.syncAdminValues();
+                alert(`已重置 ${this.currentDateLabel} ${this.adminCurrentSession} 為空白`);
+            },
+
+            // ---- 日期產生 ----
             generateDates() {
                 if (!this.startDateInput) return;
                 let start = new Date(this.startDateInput);
                 let dates = [];
                 for (let i = 0; i < 14; i++) {
-                    let d = new Date(start);
-                    d.setDate(start.getDate() + i);
-                    let month = d.getMonth() + 1, day = d.getDate();
-                    let weekdayNum = d.getDay();
-                    let weekday = ['日','一','二','三','四','五','六'][weekdayNum];
-                    dates.push({ dateStr: `${month}/${day}`, weekday, weekdayNum });
+                    let d = new Date(start); d.setDate(start.getDate()+i);
+                    let wn = d.getDay();
+                    dates.push({ dateStr:`${d.getMonth()+1}/${d.getDate()}`, weekday:['日','一','二','三','四','五','六'][wn], weekdayNum:wn });
                 }
                 this.dateList = dates;
                 this.currentDateIndex = 0;
-                // 預先建立週一 S1 的資料
+                // 預建週一 S1
                 dates.forEach(d => {
-                    if (d.weekdayNum === 1) {
+                    if (d.weekdayNum === MONDAY_WEEKDAY) {
                         const key = makeSessionKey(d.dateStr, '春S1');
-                        if (!this.sessionsData[key]) {
-                            this.$set(this.sessionsData, key, createMonS1SessionData(this.fixedHeaders));
-                        }
+                        if (!this.sessionsData[key]) this.$set(this.sessionsData, key, createMonS1Session());
                     }
                 });
             },
-            handleHeaderClick(idx) {
-                if (!(this.role === 'admin' && this.editMode)) return;
-                this.editingHeader = idx;
-                this.editingHeaderText = this.fixedHeaders[idx];
-            },
-            saveHeader() {
-                if (this.editingHeader !== null) {
-                    this.fixedHeaders.splice(this.editingHeader, 1, this.editingHeaderText);
-                    this.editingHeader = null;
-                }
-            },
-            addStudent(row, col) {
-                if (row >= 16) return;
-                let newName = prompt('新增學生：輸入「姓名 級數」(如 王小明 3Y)');
-                if (!newName) return;
-                let parts = newName.trim().split(/\s+/);
-                let name = parts[0], group = parts.length > 1 ? parts[1] : '';
-                let star = group.includes('*'), cleanGroup = group.replace('*','');
-                let newCell = { name, group: cleanGroup, star };
-                this.currentSessionData.tableRows[row][col] = newCell;
-                this.currentSessionData.allStudents.push({
-                    ...newCell, row, col,
-                    className: this.fixedHeaders[col],
-                    id: this.currentSessionData.allStudents.length,
-                    leave: false, present: false, leaveSessions: []
-                });
-                this.syncStudents();
-            },
+
+            // ---- Excel ----
             handleExcelUpload(event) {
-                const file = event.target.files[0];
-                if (!file) return;
+                const file = event.target.files[0]; if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-                    if (rows.length < 2) { alert('Excel 至少需要標題行與一筆資料'); return; }
+                    const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+                    if (rows.length < 2) { alert('Excel 需有標題行與資料'); return; }
                     let newStudentRows = [];
                     for (let r = 1; r < rows.length && newStudentRows.length < 14; r++) {
-                        let rowData = rows[r], newRow = [];
+                        let row = [];
                         for (let c = 0; c < 8; c++) {
-                            let cellValue = rowData[c] ? rowData[c].toString().trim() : '';
-                            if (!cellValue) { newRow.push(null); continue; }
-                            let name = cellValue, group = '';
-                            const parts = cellValue.split(/\s+/);
-                            if (parts.length >= 2) { name = parts[0]; group = parts[1]; }
-                            newRow.push({ name, group, star: group.includes('*') });
+                            let v = rows[r][c]?rows[r][c].toString().trim():'';
+                            if (!v) { row.push(null); continue; }
+                            let p=v.split(/\s+/), name=p[0], group=p[1]||'', star=group.includes('*');
+                            row.push({name, group:group.replace(/\*/g,''), star});
                         }
-                        newStudentRows.push(newRow);
+                        newStudentRows.push(row);
                     }
                     while (newStudentRows.length < 14) newStudentRows.push([null,null,null,null,null,null,null,null]);
-                    let newTableRows = buildFullTableRows(newStudentRows);
-                    let newAllStudents = buildStudentList(newTableRows, this.fixedHeaders);
-                    let newQuotas = initQuotas(this.fixedHeaders);
-                    this.$set(this.sessionsData, this.currentKey, { tableRows: newTableRows, allStudents: newAllStudents, quotas: newQuotas });
+                    let tableRows = buildFullTableRows(newStudentRows);
+                    let session = this.sessionsData[this.currentKey] || createEmptySession();
+                    session.tableRows = tableRows;
+                    session.allStudents = buildStudentList(tableRows);
+                    this.$set(this.sessionsData, this.currentKey, session);
                     this.syncStudents();
                     event.target.value = '';
+                    alert('Excel 匯入成功');
                 };
                 reader.readAsArrayBuffer(file);
             },
             downloadTemplate() {
-                const sampleData = [this.fixedHeaders];
+                const sampleData = [MONDAY_HEADERS];
                 for (let i = 0; i < 6; i++) {
                     let row = [];
                     for (let j = 0; j < 8; j++) {
@@ -857,26 +991,19 @@
                     sampleData.push(row);
                 }
                 const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.aoa_to_sheet(sampleData);
-                XLSX.utils.book_append_sheet(wb, ws, '課程名單');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sampleData), '課程名單');
                 XLSX.writeFile(wb, '固定8欄範例模板.xlsx');
             },
-            resetSessionToSample() {
-                this.$set(this.sessionsData, this.currentKey, createEmptySessionData(this.fixedHeaders));
-                this.syncStudents();
-                alert(`↻ 已重置 ${this.currentDateLabel} ${this.adminCurrentSession} 為空白`);
-            }
         },
         mounted() {
-            const hostname = window.location.hostname;
-            if (hostname.startsWith('parent')) this.role = 'parent';
-            else if (hostname.startsWith('teacher')) this.role = 'teacher';
-            else if (hostname.startsWith('admin')) this.role = 'admin';
-
+            const h = window.location.hostname;
+            if (h.startsWith('parent')) this.role='parent';
+            else if (h.startsWith('teacher')) this.role='teacher';
+            else if (h.startsWith('admin')) this.role='admin';
             this.generateDates();
             this.currentSessionCode = '春S1';
             this.adminCurrentSession = '春S1';
-            this.syncAdminQuotaSettings();
+            this.syncAdminValues();
         }
     });
 })();

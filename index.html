@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>春季季學期 請假補課點名系統 (23行/可編表頭/三網址)</title>
+    <!-- 引入 SheetJS 用於 Excel 匯入匯出 -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
+        body { background: #f0f3f7; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .app-container { max-width: 1400px; width: 100%; background: white; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 24px; }
+        h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #1e2b3a; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .subtitle { color: #2c3e50; background: #eef2f6; padding: 6px 16px; border-radius: 40px; font-size: 0.95rem; display: inline-block; margin-bottom: 16px; }
+        .role-bar { display: flex; gap: 12px; margin-bottom: 24px; background: #f8fafd; padding: 10px; border-radius: 48px; width: fit-content; border: 1px solid #dde3ed; }
+        .role-btn { padding: 8px 28px; border-radius: 40px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; color: #4a5b6e; }
+        .role-btn.active { background: #1e2b3a; color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .role-btn:hover:not(.active) { background: #dde3ed; }
+        
+        .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #dde3ed; background: white; margin-bottom: 20px; max-height: 600px; overflow-y: auto; }
+        table { border-collapse: collapse; width: 100%; min-width: 1200px; font-size: 0.9rem; }
+        th { background: #f2f5f9; color: #1e2b3a; font-weight: 600; padding: 16px 8px; text-align: center; border-bottom: 2px solid #cfdbe8; position: relative; }
+        th.editable:hover { background: #e3eaf2; cursor: text; }
+        td { padding: 8px 4px; border: 1px solid #e5eaf0; text-align: center; vertical-align: middle; cursor: pointer; transition: background 0.1s; }
+        td:hover { background: #f5f9ff; }
+        .student-name { font-weight: 500; color: #1e2b3a; }
+        .group-badge { display: inline-block; border-radius: 30px; padding: 2px 10px; font-size: 0.75rem; font-weight: 600; margin-left: 4px; }
+        .group-badge.R { background: #fcc; color: #a33; }
+        .group-badge.Y { background: #ffd966; color: #8a6d2b; }
+        .group-badge.B { background: #bdd7ff; color: #1e3a5f; }
+        .group-badge.default { background: #d9e2ef; color: #1e3a5f; }
+        .star-mark { color: #c45508; font-weight: bold; margin-left: 2px; font-size: 1.1rem; vertical-align: middle; }
+        .status-present { background: #fff3c9 !important; }
+        .status-leave { background: #d6f0d6 !important; }
+        .quota-tag { font-size: 0.75rem; background: #1e2b3a; color: white; border-radius: 20px; padding: 2px 10px; display: inline-block; }
+        .waitlist-badge { background: #ffedd5; color: #b45309; font-size: 0.7rem; padding: 2px 8px; border-radius: 30px; }
+        
+        .quota-panel { background: #f8fafd; border-radius: 24px; padding: 20px; border: 1px solid #dde3ed; margin-top: 20px; }
+        .quota-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start; }
+        .quota-item { background: white; border-radius: 20px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); flex: 0 1 200px; border: 1px solid #e9eef3; }
+        .quota-title { font-weight: 700; margin-bottom: 12px; color: #1e2b3a; border-bottom: 2px dashed #bdc9d9; padding-bottom: 6px; }
+        .quota-row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 0.9rem; }
+        .quota-value { font-weight: 700; color: #0066a0; }
+        .admin-input { width: 70px; padding: 6px; border-radius: 30px; border: 1px solid #bdc9d9; text-align: center; }
+
+        .update-btn { background: #4a9eff; color: white; border: none; border-radius: 30px; padding: 6px 16px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 6px rgba(0,102,204,0.2); }
+        .update-btn:hover { background: #1e7be0; }
+        .submit-btn { background: #34c759; color: white; border: none; padding: 14px 32px; border-radius: 40px; font-weight: 700; font-size: 1rem; margin-top: 20px; cursor: pointer; width: fit-content; box-shadow: 0 4px 8px rgba(52,199,89,0.3); }
+        .submit-btn.special { background: #ff9f4a; }
+        .submit-btn.special:hover { background: #e08938; }
+        .submit-btn.danger { background: #ff6b6b; }
+        .submit-btn.danger:hover { background: #e05a5a; }
+
+        .tabs-container { margin: 20px 0 10px; }
+        .date-tabs, .session-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .date-tab, .session-tab { padding: 8px 20px; border-radius: 40px; background: #edf2f7; border: 1px solid #cbd5e1; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .date-tab.active, .session-tab.active { background: #1e2b3a; color: white; border-color: #1e2b3a; }
+        .date-tab:hover, .session-tab:hover { background: #d0dbea; }
+
+        .makeup-btn { display: inline-block; margin-left: 6px; background: #2b6e4f; color: white; border-radius: 30px; padding: 2px 10px; font-size: 0.7rem; cursor: pointer; border: none; }
+        .makeup-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .makeup-btn:hover:not(:disabled) { background: #1f4f3a; }
+
+        .form-card { background: white; border-radius: 28px; padding: 28px; border: 1px solid #dde3ed; box-shadow: 0 8px 20px rgba(0,0,0,0.02); margin-top: 20px; }
+        .form-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 24px; color: #1e2b3a; }
+        .notice { background: #fff9e5; padding: 14px 20px; border-radius: 20px; color: #865d20; margin: 20px 0; border-left: 6px solid #f2c94c; }
+        .flex-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .excel-upload { background: #e8f0fe; border-radius: 40px; padding: 20px; margin-top: 20px; border: 2px dashed #8aa9c9; }
+        .file-input { padding: 12px; background: white; border-radius: 40px; width: 100%; }
+        .tip { font-size: 0.9rem; color: #2563eb; background: #dbeafe; padding: 8px 16px; border-radius: 40px; display: inline-block; margin-bottom: 16px; }
+        .edit-mode-indicator { background: #ffe4b5; padding: 8px 16px; border-radius: 40px; display: inline-block; font-weight: 600; }
+        .edit-input { width: 100%; padding: 4px; border: 2px solid #4a9eff; border-radius: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="app-container" id="app">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>📋 春季季學期 — 23行/可編表頭/三網址</h1>
+        <div class="role-bar">
+            <button class="role-btn" :class="{active: role==='parent'}" @click="role='parent'">👪 家長</button>
+            <button class="role-btn" :class="{active: role==='teacher'}" @click="role='teacher'">📌 老師</button>
+            <button class="role-btn" :class="{active: role==='admin'}" @click="role='admin'">⚙️ 後台管理</button>
+        </div>
+    </div>
+    <div class="subtitle">📅 最多23行｜表頭可編輯｜上傳Excel只取姓名級數｜三網址自動切換角色</div>
+
+    <!-- 主要表格 (固定8列，最多23行) -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th v-for="(header, idx) in fixedHeaders" :key="idx" 
+                        @click="handleHeaderClick(idx)" 
+                        :class="{editable: editMode}">
+                        <span v-if="!editMode || editingHeader !== idx">{{ header }}</span>
+                        <input v-else type="text" v-model="editingHeaderText" @blur="saveHeader" @keyup.enter="saveHeader" class="edit-input" autofocus>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(row, rowIdx) in tableRows" :key="rowIdx">
+                    <td>{{ rowIdx+1 }}</td>
+                    <td v-for="(cell, colIdx) in row" :key="colIdx" 
+                        :class="getCellClass(cell, rowIdx, colIdx)"
+                        @dblclick="handleDoubleClick(cell, rowIdx, colIdx)">
+                        <template v-if="cell">
+                            <span class="student-name">{{ cell.name }}</span>
+                            <span v-if="cell.group" class="group-badge" :class="getBadgeClass(cell.group)">{{ cell.group }}</span>
+                            <span v-if="cell.star" class="star-mark" title="無考試">*</span>
+                            <button v-if="role==='parent' && currentDate && currentSessionObj" 
+                                    class="makeup-btn" 
+                                    @click.stop="registerMakeup(cell, rowIdx, colIdx)"
+                                    :disabled="isMakeupDisabled(cell, rowIdx, colIdx)">
+                                📝補
+                            </button>
+                        </template>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 提示 -->
+    <div class="tip" v-if="role==='parent'">👆 家長：雙擊姓名請假(綠色)；點擊「補」登記補課</div>
+    <div class="tip" v-if="role==='teacher'">👆 老師：雙擊姓名點名出席(黃色)</div>
+    <div class="tip" v-if="role==='admin' && !editMode">👆 管理員：開啟編輯模式可修改表頭，或上傳Excel</div>
+    <div class="edit-mode-indicator" v-if="editMode">✏️ 編輯模式啟用 (點擊標題可修改班級名)</div>
+
+    <!-- 日期與時段分頁 (家長模式) -->
+    <div v-if="role==='parent'" class="tabs-container">
+        <div class="date-tabs">
+            <span v-for="(d, idx) in dateList" :key="idx" 
+                  class="date-tab" :class="{active: currentDateIndex === idx}"
+                  @click="currentDateIndex = idx">
+                {{ d.dateStr }} ({{ d.weekday }})
+            </span>
+        </div>
+        <div class="session-tabs">
+            <span v-for="sess in sessionList" :key="sess.code" 
+                  class="session-tab" :class="{active: currentSessionCode === sess.code}"
+                  @click="currentSessionCode = sess.code">
+                {{ sess.display }}
+            </span>
+        </div>
+    </div>
+
+    <!-- 補課名額區塊 -->
+    <div class="quota-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>📊 目前補課名額 / 候補數</h3>
+            <span class="quota-tag">候補自動遞補</span>
+        </div>
+        <div class="quota-grid">
+            <div v-for="(quota, key) in quotas" :key="key" class="quota-item">
+                <div class="quota-title">{{ key }}</div>
+                <div class="quota-row"><span>🟢 可補課</span> <span class="quota-value">{{ quota.available }}</span></div>
+                <div class="quota-row"><span>⏳ 候補數</span> <span class="quota-value">{{ quota.waitlist }}</span></div>
+                <div v-if="role==='admin'" class="flex-row" style="margin-top:12px;">
+                    <input type="number" min="0" class="admin-input" v-model.number="adminQuotaSettings[key]">
+                    <button class="update-btn" @click="updateQuota(key)">調整</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 後台管理介面 (Excel上傳) -->
+    <div class="form-card" v-if="role==='admin'">
+        <div class="form-title">⚙️ 後台管理 (可編輯表頭／上傳Excel)</div>
+        <div class="notice">🔧 上傳Excel：系統會自動提取「姓名 級數」(例如「朱宓清 1Y」)填入對應欄位，最多23行。表頭可直接點擊修改。</div>
+        
+        <div class="flex-row" style="margin-bottom:20px;">
+            <div class="field" style="width:200px;">
+                <label>起始日期 (YYYY-MM-DD)</label>
+                <input type="date" v-model="startDateInput" @change="generateDates">
+            </div>
+            <button class="submit-btn" style="background:#4a9eff;" @click="generateDates">📅 產生兩週日期</button>
+            <button class="submit-btn" style="background:#ff9f4a;" @click="editMode = !editMode">
+                {{ editMode ? '關閉編輯模式' : '開啟編輯模式' }}
+            </button>
+        </div>
+
+        <div class="excel-upload">
+            <div style="font-weight:600; margin-bottom:12px;">📥 上傳您的課程名單 (Excel格式)</div>
+            <div class="flex-row">
+                <input type="file" class="file-input" accept=".xlsx, .xls, .csv" @change="handleExcelUpload">
+                <button class="submit-btn" style="background:#4a9eff;" @click="downloadTemplate">📎 下載範例模板</button>
+            </div>
+            <p style="font-size:0.85rem; margin-top:8px;">※ 範例模板為8欄格式，每個儲存格請填「姓名 級數」，空白為無學生。</p>
+        </div>
+
+        <div class="flex-row" style="margin-top:16px;">
+            <button class="submit-btn special" @click="forceMakeup(fixedHeaders[0])">範例：強制開放第一個班級+1名額</button>
+            <button class="submit-btn" style="background:#4a9eff;" @click="simulateAutoSubstitute">🔄 模擬候補自動遞補</button>
+            <button class="submit-btn" style="background:#4a9eff;" @click="resetToSample">↻ 重置為內建範例</button>
+        </div>
+        <div style="margin-top:24px;">
+            <h4>快速開關學生請假 (點綠色開關)</h4>
+            <div style="display:grid; grid-template-columns: repeat(6,1fr); gap:8px; max-height:300px; overflow-y:auto;">
+                <div v-for="stu in allStudentsFlat" :key="stu.id" style="background:#edf2f7; border-radius:40px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                    <span>{{ stu.name }} <span :class="getBadgeClass(stu.group)" style="padding:2px 6px;">{{ stu.group }}</span></span>
+                    <input type="checkbox" :checked="stu.leave" @change="toggleLeave(stu)" :id="'cb'+stu.id">
+                    <label :for="'cb'+stu.id" style="font-size:0.7rem;">請假</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 家長備用表單 -->
+    <div class="form-card" v-if="role==='parent'">
+        <div class="form-title">✏️ 家長請假 (也可雙擊表格)</div>
+        <div class="notice">💡 請假後該生標記綠色，所屬班級補課名額+1。</div>
+        <div class="form-grid">
+            <div class="field"><label>學生姓名</label><input v-model="parentForm.name" placeholder="例如 朱宓清"></div>
+            <div class="field"><label>班級</label><select v-model="parentForm.className"><option v-for="h in fixedHeaders" :value="h">{{ h }}</option></select></div>
+            <div class="field"><label>請假日期</label><select v-model="parentForm.date"><option v-for="d in dateList" :value="d.dateStr">{{ d.dateStr }} ({{ d.weekday }})</option></select></div>
+            <div class="field"><label>請假時段</label><select v-model="parentForm.sessionCode"><option v-for="s in sessionList" :value="s.code">{{ s.display }}</option></select></div>
+        </div>
+        <button class="submit-btn" @click="submitLeave">✓ 送出請假</button>
+    </div>
+
+    <!-- 老師點名表單 -->
+    <div class="form-card" v-if="role==='teacher'">
+        <div class="form-title">📌 老師點名 (雙擊表格快速點名)</div>
+        <div class="form-grid">
+            <div class="field"><label>班級</label><select v-model="teacherForm.className"><option v-for="h in fixedHeaders" :value="h">{{ h }}</option></select></div>
+            <div class="field"><label>出席學生 (逗號分隔)</label><textarea v-model="teacherForm.presentStudents" rows="2" placeholder="朱宓清, 許宸羽..."></textarea></div>
+        </div>
+        <button class="submit-btn" @click="markPresent">💾 儲存點名</button>
+        <button class="submit-btn danger" @click="clearAllLeave">🗂️ 清除所有請假</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+<script>
+(function(){
+    // 固定8個班級標題 (可編輯)
+    const defaultHeaders = ["1RY鋼鐵人", "1B2R綠茶", "2YB小白", "3小馬", "4饅頭", "5+6阿軍", "7以上青蛙", "6+2老師"];
+
+    // 內建範例資料 (最多23行)
+    const sampleRows = [
+        [ {name:'朱宓清',group:'1Y'}, {name:'陳子元',group:'2R'}, {name:'李恩燦',group:'2B'}, {name:'林章綺',group:'3Y'}, {name:'李羽程',group:'4B'}, {name:'周道',group:'5B'}, {name:'許諾',group:'7R*'}, {name:'3/2幼兒園加入',group:''} ],
+        [ {name:'許宸羽',group:'1Y'}, {name:'廖奕涵',group:'2R'}, {name:'黃培潔',group:'2B'}, {name:'鄭智允',group:'3R'}, {name:'顏樹祐',group:'4Y'}, {name:'黃湘芸',group:'5Y'}, {name:'顏語彤',group:'7B'}, null ],
+        [ {name:'柯丞軒',group:'1Y'}, {name:'林希',group:'1B'}, {name:'鄭鈞霖',group:'2Y'}, {name:'許芷瑄',group:'3R'}, {name:'沈芷旋',group:'4Y'}, {name:'詹筑婷',group:'5Y'}, {name:'徐家亮',group:'9R'}, {name:'史努比',group:''} ],
+        [ {name:'鮑家樽',group:'1Y'}, {name:'林有辰',group:'2R'}, {name:'白舒宇',group:'2Y'}, {name:'李恩禧',group:'3B'}, {name:'陳子陽',group:'4B'}, {name:'丁昀立',group:'5B'}, {name:'徐家陽',group:'9Y'}, {name:'青蛙',group:''} ],
+        [ {name:'卞禹澄',group:'1Y'}, {name:'汪悠嘉',group:'2R'}, {name:'邱奕嘉',group:'2B'}, {name:'李丞軒',group:'3Y'}, {name:'施瑞恩',group:'4Y'}, {name:'林瀚璇',group:'5Y'}, {name:'徐銘興',group:'6Y'}, {name:'阿軍2/23假',group:''} ],
+        [ {name:'沈瑄頤',group:'1R'}, null, {name:'李善旬',group:'2Y'}, {name:'陳巧霏',group:'3Y'}, {name:'謝凱權',group:'4R'}, {name:'丁巧亭',group:'5B'}, {name:'楊滢萱',group:'6Y'}, {name:'小馬一二四',group:''} ],
+        [ null, null, {name:'黃律綺',group:'2B'}, null, {name:'楊詞芝',group:'4R'}, {name:'張愛馨',group:'5Y'}, {name:'楊岳詠',group:'6Y'}, {name:'小白',group:''} ],
+        [ null, null, null, null, {name:'馬碩雍',group:'4Y'}, null, null, {name:'綠茶',group:''} ],
+        [ null, null, null, null, null, null, null, {name:'銅鐵人',group:''} ],
+        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
+        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
+        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
+        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
+        [ null, null, null, null, null, null, null, {name:'饅頭 Sb',group:''} ],
+    ];
+
+    // 時段代號對照
+    const sessionDefinitions = [
+        { code: '春S1', desc: '下午四點' },
+        { code: '春S2', desc: '下午五點半' },
+        { code: '春S3', desc: '下午18:50' },
+        { code: '春W', desc: '下午兩點' },
+        { code: '春A', desc: '週六早上八點' },
+        { code: '春B', desc: '週六早上九點四十' },
+        { code: '春C', desc: '週六早上十一點' },
+        { code: '春E', desc: '週六下午13:50' },
+        { code: '春F', desc: '週六下午15:30' },
+        { code: '春G', desc: '週六下午17:10' },
+        { code: '春H', desc: '週六下午18:40' },
+        { code: '春SA', desc: '週日早上八點' },
+        { code: '春SB', desc: '週日早上九點四十' },
+        { code: '春SC', desc: '週日早上十一點' },
+        { code: '春SE', desc: '週日下午13:50' },
+        { code: '春SF', desc: '週日下午15:30' },
+        { code: '春SG', desc: '週日下午17:10' },
+    ];
+
+    let flatId = 0;
+    // 從表格建立學生列表 (最多23行)
+    function buildStudentList(table) {
+        let list = [];
+        for (let r = 0; r < table.length; r++) {
+            for (let c = 0; c < table[r].length; c++) {
+                let cell = table[r][c];
+                if (cell && cell.name && cell.name !== '3/2幼兒園加入' && !cell.name.includes('饅頭 Sb') && !cell.name.includes('史努比') && !cell.name.includes('青蛙') && !cell.name.includes('阿軍2/23') && !cell.name.includes('小馬一二四') && !cell.name.includes('小白') && !cell.name.includes('綠茶') && !cell.name.includes('銅鐵人')) {
+                    let group = cell.group || '';
+                    let star = group.includes('*');
+                    let cleanGroup = group.replace('*', '');
+                    list.push({
+                        ...cell,
+                        group: cleanGroup,
+                        star: star,
+                        row: r,
+                        col: c,
+                        className: fixedHeaders.value[c], // 注意：這裡需要使用當前的表頭
+                        id: flatId++,
+                        leave: false,
+                        present: false,
+                        leaveSessions: []
+                    });
+                } else if (cell && cell.name) {
+                    let group = cell.group || '';
+                    let star = group.includes('*');
+                    let cleanGroup = group.replace('*', '');
+                    list.push({
+                        ...cell,
+                        group: cleanGroup,
+                        star: star,
+                        row: r,
+                        col: c,
+                        className: fixedHeaders.value[c],
+                        id: flatId++,
+                        leave: false,
+                        present: false,
+                        leaveSessions: []
+                    });
+                }
+            }
+        }
+        return list;
+    }
+
+    // 初始化 quotas (每個固定班級)
+    function initQuotas(headers) {
+        let q = {};
+        headers.forEach(h => { q[h] = { available: 0, waitlist: 0 }; });
+        return q;
+    }
+
+    new Vue({
+        el: '#app',
+        data: {
+            role: 'parent', // 預設，稍後會根據網址覆蓋
+            fixedHeaders: [...defaultHeaders],
+            tableRows: JSON.parse(JSON.stringify(sampleRows)),
+            quotas: initQuotas(defaultHeaders),
+            adminQuotaSettings: {},
+            parentForm: { name: '', className: defaultHeaders[0], date: '', sessionCode: '春S1' },
+            teacherForm: { className: defaultHeaders[0], presentStudents: '' },
+            leaveHistory: [],
+            allStudents: [],
+            startDateInput: '2026-03-16',
+            dateList: [],
+            sessionList: sessionDefinitions,
+            currentDateIndex: 0,
+            currentSessionCode: '春S1',
+            makeupRecords: [],
+            // 編輯模式相關
+            editMode: false,
+            editingHeader: null,
+            editingHeaderText: '',
+        },
+        computed: {
+            allStudentsFlat() { return this.allStudents; },
+            currentDate() { return this.dateList[this.currentDateIndex]?.dateStr; },
+            currentSessionObj() { return this.sessionList.find(s => s.code === this.currentSessionCode); }
+        },
+        watch: {
+            // 當表頭改變時，需要更新 quotas 的 key 以及所有學生的 className
+            fixedHeaders: {
+                handler(newHeaders, oldHeaders) {
+                    // 重新建立 quotas，保留原有的 available 值 (盡量對應)
+                    let newQuotas = {};
+                    newHeaders.forEach((h, idx) => {
+                        let oldKey = oldHeaders[idx] || h;
+                        newQuotas[h] = this.quotas[oldKey] || { available: 0, waitlist: 0 };
+                    });
+                    this.quotas = newQuotas;
+                    // 更新所有學生的 className
+                    this.allStudents.forEach(s => {
+                        s.className = newHeaders[s.col];
+                    });
+                    this.syncStudents();
+                },
+                deep: true
+            }
+        },
+        methods: {
+            getBadgeClass(group) {
+                if (!group) return 'default';
+                const match = group.match(/[RYB]$/);
+                return match ? match[0] : 'default';
+            },
+            getCellClass(cell, row, col) {
+                if (!cell) return '';
+                let cls = '';
+                let found = this.allStudents.find(s => s.row === row && s.col === col);
+                if (found) {
+                    if (found.leave) cls += 'status-leave ';
+                    else if (found.present) cls += 'status-present ';
+                }
+                return cls;
+            },
+            syncStudents() {
+                this.allStudents.forEach(s => {
+                    let cell = this.tableRows[s.row]?.[s.col];
+                    if (cell) {
+                        cell.leave = s.leave;
+                        cell.present = s.present;
+                    }
+                });
+                this.$forceUpdate();
+            },
+            // 雙擊處理
+            handleDoubleClick(cell, row, col) {
+                if (!cell) return;
+                if (this.role === 'admin') { alert('管理員模式請使用下方工具'); return; }
+                let student = this.allStudents.find(s => s.row === row && s.col === col);
+                if (!student) return;
+                if (this.role === 'parent') {
+                    if (!this.currentDate || !this.currentSessionCode) { alert('請先選擇日期與時段'); return; }
+                    if (student.leave) { alert('已請假'); return; }
+                    this.setStudentLeave(student, true, this.currentDate, this.currentSessionCode);
+                } else if (this.role === 'teacher') {
+                    this.setStudentPresent(student, !student.present);
+                }
+            },
+            setStudentLeave(stu, leave, dateStr, sessionCode) {
+                if (stu.leave === leave) return;
+                const oldLeave = stu.leave;
+                stu.leave = leave;
+                if (leave) {
+                    stu.present = false;
+                    if (!stu.leaveSessions) stu.leaveSessions = [];
+                    stu.leaveSessions.push(`${dateStr}_${sessionCode}`);
+                    let quota = this.quotas[stu.className];
+                    if (quota) {
+                        quota.available += 1;
+                        this.leaveHistory.push(`${stu.name} (${stu.className}) 請假 (${dateStr} ${this.getSessionDisplay(sessionCode)})，補課名額+1`);
+                    }
+                } else {
+                    let quota = this.quotas[stu.className];
+                    if (quota && oldLeave) {
+                        quota.available = Math.max(0, quota.available - 1);
+                        this.leaveHistory.push(`${stu.name} 取消請假，補課名額-1`);
+                    }
+                }
+                this.syncStudents();
+            },
+            setStudentPresent(stu, present) {
+                if (stu.present === present) return;
+                stu.present = present;
+                if (present) stu.leave = false;
+                this.syncStudents();
+            },
+            getSessionDisplay(code) {
+                let s = this.sessionList.find(s => s.code === code);
+                return s ? s.display : code;
+            },
+            isMakeupDisabled(cell, row, col) {
+                if (!cell) return true;
+                let student = this.allStudents.find(s => s.row === row && s.col === col);
+                if (!student) return true;
+                if (student.leaveSessions && student.leaveSessions.includes(`${this.currentDate}_${this.currentSessionCode}`)) return true;
+                if (this.makeupRecords.some(r => r.studentId === student.id && r.dateStr === this.currentDate && r.sessionCode === this.currentSessionCode)) return true;
+                return false;
+            },
+            registerMakeup(cell, row, col) {
+                let student = this.allStudents.find(s => s.row === row && s.col === col);
+                if (!student) return;
+                if (this.isMakeupDisabled(cell, row, col)) { alert('不可在此時段補課'); return; }
+                let quota = this.quotas[student.className];
+                if (!quota) return;
+                if (quota.available > 0) {
+                    quota.available -= 1;
+                    this.makeupRecords.push({
+                        studentId: student.id,
+                        dateStr: this.currentDate,
+                        sessionCode: this.currentSessionCode,
+                        className: student.className
+                    });
+                    this.leaveHistory.push(`${student.name} 登記補課 ${this.currentDate} ${this.getSessionDisplay(this.currentSessionCode)} (${student.className})`);
+                } else {
+                    quota.waitlist += 1;
+                    this.leaveHistory.push(`${student.name} 候補 ${this.currentDate} ${this.getSessionDisplay(this.currentSessionCode)} (${student.className})`);
+                }
+            },
+            submitLeave() {
+                let { name, className, date, sessionCode } = this.parentForm;
+                if (!name || !className || !date || !sessionCode) { alert('請填寫完整'); return; }
+                let student = this.allStudents.find(s => s.name === name && s.className === className);
+                if (!student) { alert('找不到該學生'); return; }
+                this.setStudentLeave(student, true, date, sessionCode);
+                this.parentForm.name = '';
+            },
+            markPresent() {
+                let { className, presentStudents } = this.teacherForm;
+                let names = presentStudents.split(',').map(s => s.trim()).filter(s => s);
+                names.forEach(n => {
+                    let stu = this.allStudents.find(s => s.name === n && s.className === className);
+                    if (stu) this.setStudentPresent(stu, true);
+                });
+                this.leaveHistory.push(`[點名] ${className} 出席已標記`);
+            },
+            clearAllLeave() {
+                this.allStudents.forEach(s => { s.leave = false; s.present = false; s.leaveSessions = []; });
+                for (let key in this.quotas) {
+                    this.quotas[key].available = 0;
+                    this.quotas[key].waitlist = 0;
+                }
+                this.makeupRecords = [];
+                this.leaveHistory.push('⚠️ 清除所有請假/出席/補課');
+                this.syncStudents();
+            },
+            toggleLeave(stu) {
+                if (stu.leave) {
+                    this.setStudentLeave(stu, false);
+                } else {
+                    stu.leave = true;
+                    stu.present = false;
+                    let quota = this.quotas[stu.className];
+                    if (quota) quota.available += 1;
+                    this.syncStudents();
+                }
+            },
+            updateQuota(key) {
+                let val = this.adminQuotaSettings[key];
+                if (val !== undefined && val >= 0) {
+                    this.quotas[key].available = val;
+                }
+            },
+            simulateAutoSubstitute() {
+                for (let key in this.quotas) {
+                    let q = this.quotas[key];
+                    while (q.available > 0 && q.waitlist > 0) {
+                        q.available -= 1;
+                        q.waitlist -= 1;
+                        this.leaveHistory.push(`[自動遞補] ${key} 一位候補遞補成功`);
+                    }
+                }
+            },
+            forceMakeup(className) {
+                if (this.quotas[className]) {
+                    this.quotas[className].available += 1;
+                    this.leaveHistory.push(`[管理] 強制開放 ${className} 名額+1`);
+                }
+            },
+            generateDates() {
+                if (!this.startDateInput) return;
+                let start = new Date(this.startDateInput);
+                let dates = [];
+                for (let i = 0; i < 14; i++) {
+                    let d = new Date(start);
+                    d.setDate(start.getDate() + i);
+                    let month = d.getMonth() + 1, day = d.getDate();
+                    let weekday = ['日','一','二','三','四','五','六'][d.getDay()];
+                    dates.push({ dateStr: `${month}/${day}`, weekday });
+                }
+                this.dateList = dates;
+                this.currentDateIndex = 0;
+            },
+            // 編輯標題
+            handleHeaderClick(idx) {
+                if (!this.editMode) return;
+                this.editingHeader = idx;
+                this.editingHeaderText = this.fixedHeaders[idx];
+            },
+            saveHeader() {
+                if (this.editingHeader !== null) {
+                    this.fixedHeaders.splice(this.editingHeader, 1, this.editingHeaderText);
+                    this.editingHeader = null;
+                }
+            },
+            // Excel 上傳處理：只取姓名與級數，最多23行
+            handleExcelUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+                    if (rows.length < 2) { alert('Excel 至少需要標題行與一筆資料'); return; }
+                    
+                    // 忽略第一行標題，從第二行開始解析，最多23行
+                    let newRows = [];
+                    for (let r = 1; r < rows.length && newRows.length < 23; r++) {
+                        let rowData = rows[r];
+                        let newRow = [];
+                        for (let c = 0; c < 8; c++) {
+                            let cellValue = rowData[c] ? rowData[c].toString().trim() : '';
+                            if (cellValue === '') {
+                                newRow.push(null);
+                            } else {
+                                // 只提取姓名與級數 (第一個空格前的姓名，後面的為級數)
+                                let name = cellValue, group = '';
+                                const parts = cellValue.split(/\s+/);
+                                if (parts.length >= 2) {
+                                    name = parts[0];
+                                    group = parts[1];
+                                }
+                                newRow.push({ name, group, star: group.includes('*') });
+                            }
+                        }
+                        newRows.push(newRow);
+                    }
+
+                    // 更新表格
+                    this.tableRows = newRows;
+                    
+                    // 重建 quotas (全部歸零)
+                    this.quotas = initQuotas(this.fixedHeaders);
+                    
+                    // 重建 allStudents
+                    flatId = 0;
+                    this.allStudents = buildStudentList(newRows);
+                    
+                    // 重置請假相關
+                    this.makeupRecords = [];
+                    this.leaveHistory.push(`📂 已從 Excel 匯入，共 ${this.allStudents.length} 位學生 (最多23行)`);
+                    
+                    // 更新 adminQuotaSettings
+                    this.adminQuotaSettings = {};
+                    this.fixedHeaders.forEach(h => { this.adminQuotaSettings[h] = 0; });
+
+                    this.syncStudents();
+                    event.target.value = '';
+                };
+                reader.readAsArrayBuffer(file);
+            },
+            // 下載範例模板 (固定8欄格式)
+            downloadTemplate() {
+                const sampleData = [this.fixedHeaders];
+                // 從 sampleRows 取前幾行作為範例
+                const maxRows = Math.min(10, sampleRows.length);
+                for (let i = 0; i < maxRows; i++) {
+                    let row = [];
+                    for (let j = 0; j < 8; j++) {
+                        let cell = sampleRows[i][j];
+                        if (cell && cell.name) {
+                            row.push(`${cell.name} ${cell.group}`);
+                        } else {
+                            row.push('');
+                        }
+                    }
+                    sampleData.push(row);
+                }
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(sampleData);
+                XLSX.utils.book_append_sheet(wb, ws, '課程名單');
+                XLSX.writeFile(wb, '固定8欄範例模板.xlsx');
+            },
+            // 重置為內建範例
+            resetToSample() {
+                this.tableRows = JSON.parse(JSON.stringify(sampleRows));
+                this.quotas = initQuotas(this.fixedHeaders);
+                flatId = 0;
+                this.allStudents = buildStudentList(this.tableRows);
+                this.makeupRecords = [];
+                this.leaveHistory.push('↻ 已重置為內建範例');
+                this.syncStudents();
+            }
+        },
+        mounted() {
+            // 根據網址自動切換角色 (用於三個獨立網址)
+            const hostname = window.location.hostname;
+            if (hostname.startsWith('parent')) {
+                this.role = 'parent';
+            } else if (hostname.startsWith('teacher')) {
+                this.role = 'teacher';
+            } else if (hostname.startsWith('admin')) {
+                this.role = 'admin';
+            }
+            // 其餘初始化
+            this.allStudents = buildStudentList(this.tableRows);
+            // 更新學生的 className 使用當前表頭
+            this.allStudents.forEach(s => {
+                s.className = this.fixedHeaders[s.col];
+            });
+            // 示範請假
+            let demo = this.allStudents.find(s => s.name === '陳子元');
+            if (demo) demo.leave = true;
+            this.syncStudents();
+            this.generateDates();
+        }
+    });
+})();
+</script>
+</body>
+</html>

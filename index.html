@@ -153,6 +153,13 @@ td.dragging{opacity:0.4;}
 /* ── Modal ── */
 .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;display:flex;align-items:center;justify-content:center;padding:12px;}
 .modal-box{background:white;border-radius:20px;padding:18px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.22);}
+.modal-box.wide{max-width:1100px;}
+/* 補課週模式 */
+.makeup-mode-banner{background:#fef9c3;border:2px solid #fcd34d;border-radius:16px;padding:10px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.makeup-sess-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px;}
+.makeup-sess-card{background:white;border-radius:14px;padding:12px;border:1px solid #e9eef3;}
+.makeup-sess-title{font-weight:700;font-size:0.82rem;color:#1e2b3a;margin-bottom:4px;}
+.makeup-sess-sub{font-size:0.7rem;color:#6b7280;margin-bottom:8px;}
 .modal-title{font-size:1rem;font-weight:700;color:#1e2b3a;margin-bottom:10px;}
 .prev-table{width:100%;border-collapse:collapse;font-size:0.74rem;margin-bottom:8px;}
 .prev-table th{background:#f2f5f9;padding:5px 7px;text-align:left;border:1px solid #dde3ed;font-weight:600;}
@@ -532,23 +539,21 @@ td.dragging{opacity:0.4;}
 
 
 
-  <!-- 補課週管理 -->
-  <div class="card" v-if="hasMakeupWeeks">
-    <div class="card-title">📚 補課週管理</div>
-    <div class="notice">補課週全部時段立即開放，級數符合即可預約，無每天限制。</div>
-    <div class="makeup-signup-grid">
-      <div v-for="sess in sessionList" :key="sess.code" class="mu-slot">
-        <div class="mu-slot-title">{{ sess.code.replace('春','') }} {{ sess.desc }}</div>
-        <div class="mu-slot-avail">人數上限：
-          <input type="number" min="0" v-model.number="makeupWeekQuotas[sess.code]"
-                 style="width:45px;padding:2px;border-radius:18px;border:1px solid #bdc9d9;text-align:center;font-size:0.75rem;">
-        </div>
-        <div style="font-size:0.7rem;color:#6b7280;">
-          已預約：{{ getMakeupWeekSignups(sess.code).length }} 人
+  <!-- 補課週管理按鈕 -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div class="card-title" style="margin-bottom:2px;">📚 補課週管理</div>
+        <div style="font-size:0.76rem;color:#6b7280;">
+          {{ semesterConfig.makeupStartDate && semesterConfig.makeupEndDate
+             ? semesterConfig.makeupStartDate + ' ～ ' + semesterConfig.makeupEndDate
+             : '尚未設定補課週日期' }}
         </div>
       </div>
+      <button class="btn purple" style="margin-top:0;" @click="makeupModal.show=true">
+        ⚙️ 開啟補課週設定
+      </button>
     </div>
-    <button class="btn blue" style="margin-top:8px;" @click="exportMakeupReport">📊 匯出補課週報表</button>
   </div>
 
 </template><!-- end admin -->
@@ -573,6 +578,50 @@ td.dragging{opacity:0.4;}
   </div>
   <button class="btn green" @click="markPresent">💾 儲存點名</button>
   <button class="btn red"   @click="clearAllLeave">🗂️ 清除所有請假</button>
+</div>
+
+<!-- 補課週設定 Modal -->
+<div class="modal-mask" v-if="makeupModal.show" @click.self="makeupModal.show=false">
+  <div class="modal-box wide">
+    <div class="modal-title">📚 補課週設定</div>
+    <!-- 起訖日期 -->
+    <div class="flex" style="flex-wrap:wrap;gap:12px;margin-bottom:14px;background:#fef9c3;padding:12px;border-radius:14px;border:1px solid #fcd34d;">
+      <div>
+        <label style="font-size:0.77rem;display:block;margin-bottom:2px;">補課週開始日期</label>
+        <input type="date" v-model="semesterConfig.makeupStartDate"
+               style="padding:4px 10px;border-radius:28px;border:1px solid #fcd34d;font-size:0.8rem;">
+      </div>
+      <div>
+        <label style="font-size:0.77rem;display:block;margin-bottom:2px;">補課週結束日期</label>
+        <input type="date" v-model="semesterConfig.makeupEndDate"
+               style="padding:4px 10px;border-radius:28px;border:1px solid #fcd34d;font-size:0.8rem;">
+      </div>
+      <div style="align-self:flex-end;font-size:0.76rem;color:#b45309;">
+        ※ 補課週期間所有時段立即全開，級數符合即可預約，無每天堂數限制。
+      </div>
+    </div>
+    <!-- 各時段人數上限 -->
+    <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;">各時段人數上限設定</div>
+    <div class="makeup-sess-grid">
+      <div v-for="sess in sessionList" :key="sess.code" class="makeup-sess-card">
+        <div class="makeup-sess-title">{{ sess.code.replace('春','') }} {{ sess.desc }}</div>
+        <div class="makeup-sess-sub">{{ ['日','一','二','三','四','五','六'][sess.weekdays[0]] }}曜日 開課</div>
+        <div class="flex" style="gap:6px;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.75rem;">人數上限：</span>
+          <input type="number" min="0" v-model.number="makeupWeekQuotas[sess.code]"
+                 style="width:55px;padding:3px;border-radius:18px;border:1px solid #bdc9d9;text-align:center;font-size:0.8rem;">
+          <span style="font-size:0.72rem;color:#6b7280;">人</span>
+        </div>
+        <div style="font-size:0.7rem;color:#4a9eff;">
+          已預約：{{ getMakeupWeekSignups(sess.code).length }} 人
+        </div>
+      </div>
+    </div>
+    <div class="flex" style="margin-top:14px;">
+      <button class="btn green" @click="makeupModal.show=false">✅ 儲存並關閉</button>
+      <button class="btn blue"  style="margin-top:0;" @click="exportMakeupReport">📊 匯出報表</button>
+    </div>
+  </div>
 </div>
 
 <!-- 匯入預覽 Modal -->
@@ -701,59 +750,59 @@ function hasN(g){ return normalizeGrade(g).endsWith('N'); }
 
 // ─── ★ 從班級標題自動解析允許程度 ──────────────
 // 規則：
-//   數字後有RYB → 只開那些顏色
+//   數字後有RYB → 只開那些顏色（支援 1B2R 和 1B+2R 兩種格式）
 //   數字後無RYB → 全開 R/Y/B
-//   含「以上」→ 該數字以上全開所有顏色
+//   含「以上」→ 該數字以上全開（比對法，不逐一列舉）
 function parseTitleGrades(label){
     if(!label) return [];
     const s = label.toString();
-    const result = new Set();
 
-    // 特殊：含「以上」
-    const aboveMatch = s.match(/(\d+)[以上]+/);
+    // 特殊：含「以上」— 回傳 __above 標記，用比對法
+    const aboveMatch = s.match(/(\d+)\s*以上/);
     if(aboveMatch){
-        const min = parseInt(aboveMatch[1]);
-        for(let lv=min; lv<=15; lv++){
-            ['R','Y','B'].forEach(c=>result.add(lv+c));
-        }
-        return [...result];
+        return [{__above: parseInt(aboveMatch[1])}];
     }
 
-    // 一般解析：找所有「數字群組+顏色」
-    // 先把標題去掉中文老師名（取數字+RYB+/+的部分）
-    const numPart = s.replace(/[\u4e00-\u9fff]/g,'').toUpperCase();
-    // 用+分隔
-    const segments = numPart.split('+').map(s=>s.trim()).filter(s=>s);
-    for(const seg of segments){
-        const m = seg.match(/^(\d+)([RYB]*)$/);
-        if(!m) continue;
+    const result = new Set();
+    // 去掉中文字、特殊符號，只留數字、RYB、+
+    const numPart = s.replace(/[一-鿿　-〿！-｠↑↓↑↓+\s]/g, c => c==='+' ? '+' : ' ')
+                     .toUpperCase();
+
+    // ★ 核心：用正則逐字掃描「數字+RYB顏色」組合
+    // 支援 1B2R（無分隔）和 1B+2R（有+分隔）兩種格式
+    const re = /(\d+)([RYB]*)/g;
+    let m;
+    while((m = re.exec(numPart)) !== null){
+        if(!m[1]) continue;
         const lv = m[1];
         const colors = m[2] ? m[2].split('') : ['R','Y','B'];
-        colors.forEach(c=>result.add(lv+c));
+        colors.forEach(c => result.add(lv+c));
     }
+
     return [...result].sort((a,b)=>{
-        const la=parseInt(a),lb=parseInt(b);
-        return la!==lb?la-lb:a.localeCompare(b);
+        const la=parseInt(a), lb=parseInt(b);
+        return la!==lb ? la-lb : a.localeCompare(b);
     });
 }
 
 function gradeAllowedByTitle(rawGrade, titleLabel){
     const allowed = parseTitleGrades(titleLabel);
     if(!allowed.length) return true; // 無法解析→全開
-    const g = normalizeGrade(rawGrade).replace(/N$/,'');
-    // 特殊：「以上」類型
-    const aboveMatch = titleLabel.match(/(\d+)[以上]+/);
-    if(aboveMatch){
-        const min=parseInt(aboveMatch[1]);
-        const lv=parseInt(g);
-        return !isNaN(lv) && lv>=min;
-    }
-    const m=g.match(/^(\d+)([RYB]?)$/);
-    if(!m) return false;
-    const key=m[2]?m[1]+m[2]:null;
-    return key?allowed.includes(key):false;
-}
 
+    const g = normalizeGrade(rawGrade).replace(/N$/,'');
+
+    // 「以上」類型：用數字直接比對
+    if(allowed.length===1 && allowed[0].__above !== undefined){
+        const min = allowed[0].__above;
+        const lv = parseInt(g);
+        return !isNaN(lv) && lv >= min;
+    }
+
+    const mm = g.match(/^(\d+)([RYB]?)$/);
+    if(!mm) return false;
+    const key = mm[2] ? mm[1]+mm[2] : null;
+    return key ? allowed.includes(key) : false;
+}
 // 週一固定班級驗證
 const MON_GRADE_FNS=[
     g=>/^1[RY]N?$/i.test(normalizeGrade(g)),
@@ -919,6 +968,8 @@ new Vue({
         role:'parent',
         WD_LABELS,
         sessionsData:{},
+        // 基準名單：key = "weekdayNum__sessionCode"，每個星期幾的基礎名單
+        baseSessions:{},
         // 表頭覆蓋記錄：{ key:"dateStr__code__colIdx", label }
         headerOverrides:{},
         changeHistory:[], // 修改記錄
@@ -950,6 +1001,7 @@ new Vue({
         editMode:false,
         dragSource:null,
         importPrev:{show:false,sheets:[]},
+        makeupModal:{show:false},
         headerEdit:{show:false,colIdx:-1,original:'',newVal:'',fromWeek:0},
         singleUploadFromWeek:0,
     },
@@ -1083,8 +1135,17 @@ new Vue({
             const key=makeKey(dateStr,code);
             if(!this.sessionsData[key]){
                 const de=this.dateList.find(d=>d.dateStr===dateStr);
-                const isMon=de&&de.weekdayNum===MONDAY_WD;
-                this.$set(this.sessionsData,key,(isMon&&code==='春S1')?monS1Session():emptySession());
+                const wdNum=de?de.weekdayNum:-1;
+                // ★ 優先從基準名單繼承
+                const baseKey=`${wdNum}__${code}`;
+                if(this.baseSessions[baseKey]){
+                    const clone=JSON.parse(JSON.stringify(this.baseSessions[baseKey]));
+                    clone.allStudents=buildStudents(clone.rows,clone.cols);
+                    this.$set(this.sessionsData,key,clone);
+                } else {
+                    const isMon=wdNum===MONDAY_WD;
+                    this.$set(this.sessionsData,key,(isMon&&code==='春S1')?monS1Session():emptySession());
+                }
             }
             return this.sessionsData[key];
         },
@@ -1095,7 +1156,12 @@ new Vue({
 
         // ── 程度工具（暴露給模板） ──
         gradeColor,gradeDisplay,hasN,
-        getParsedGrades(label){ return parseTitleGrades(label); },
+        getParsedGrades(label){
+            const r = parseTitleGrades(label);
+            // 處理「以上」特殊標記
+            if(r.length===1 && r[0].__above !== undefined) return [`${r[0].__above}以上`];
+            return r;
+        },
 
         // ── 欄位相關 ──
         getQuota(ci){ return this.currentSessionData.quotas?.[ci]||{available:0,waitlist:0,noRefill:false}; },
@@ -1389,7 +1455,30 @@ new Vue({
             const stu=this.currentSessionData.allStudents.find(s=>s.row===ri&&s.col===ci);
             if(stu){stu.name=name;stu.group=group;}
             else this.currentSessionData.allStudents.push({name,group,star:false,row:ri,col:ci,id:Date.now(),leave:false,present:false,leaveSessions:[],leaveTs:null});
+            // ★ 連動：傳播到後續週
+            this.propagateCellEdit(ri,ci,this.currentSessionData.rows[ri][ci]);
             this.$forceUpdate();
+        },
+        // 單格編輯傳播
+        propagateCellEdit(ri,ci,newCell){
+            const curWdNum=this.currentWeekdayNum;
+            const code=this.currentSessionCode;
+            const baseKey=`${curWdNum}__${code}`;
+            if(this.baseSessions[baseKey]){
+                const base=this.baseSessions[baseKey];
+                if(base.rows[ri]) base.rows[ri][ci]=newCell?JSON.parse(JSON.stringify(newCell)):null;
+            }
+            this.weekGroups.forEach((wk,wi)=>{
+                if(wi<=this.currentWeekIdx) return;
+                wk.dates.forEach(d=>{
+                    if(d.weekdayNum!==curWdNum) return;
+                    const key=makeKey(d.dateStr,code);
+                    const sess=this.sessionsData[key];
+                    if(!sess) return;
+                    if(sess.rows[ri]) sess.rows[ri][ci]=newCell?JSON.parse(JSON.stringify(newCell)):null;
+                    sess.allStudents=buildStudents(sess.rows,sess.cols);
+                });
+            });
         },
         addStudentAt(ri,ci){
             const ans=prompt('新增學生：「姓名 級數」'); if(!ans||!ans.trim()) return;
@@ -1402,6 +1491,7 @@ new Vue({
         deleteAt(ri,ci){
             this.currentSessionData.rows[ri][ci]=null;
             this.currentSessionData.allStudents=this.currentSessionData.allStudents.filter(s=>!(s.row===ri&&s.col===ci));
+            this.propagateCellEdit(ri,ci,null);
             this.$forceUpdate();
         },
         addEmptyRow(){
@@ -1436,7 +1526,37 @@ new Vue({
             const ss=this.currentSessionData.allStudents.find(s=>s.row===sr&&s.col===sc);
             const ts=this.currentSessionData.allStudents.find(s=>s.row===tr&&s.col===tc);
             if(ss){ss.row=tr;ss.col=tc;} if(ts){ts.row=sr;ts.col=sc;}
-            this.dragSource=null;this.$forceUpdate();
+            this.dragSource=null;
+            // ★ 連動：把修改同步到基準名單 + 同星期幾的後續週
+            this.propagateChange(sr,sc,tr,tc,src,tgt||null);
+            this.$forceUpdate();
+        },
+        // ★ 修改傳播：從當前週起，同步到後續所有符合星期幾的週次
+        propagateChange(sr,sc,tr,tc,srcCell,tgtCell){
+            const curWdNum=this.currentWeekdayNum;
+            const code=this.currentSessionCode;
+            // 更新基準名單
+            const baseKey=`${curWdNum}__${code}`;
+            if(this.baseSessions[baseKey]){
+                const base=this.baseSessions[baseKey];
+                if(base.rows[tr]) base.rows[tr][tc]=srcCell;
+                if(base.rows[sr]) base.rows[sr][sc]=tgtCell;
+            }
+            // 找當前週次
+            const curWeekIdx=this.currentWeekIdx;
+            // 同步到後續週（不影響已過去的週）
+            this.weekGroups.forEach((wk,wi)=>{
+                if(wi<=curWeekIdx) return; // 不回朔
+                wk.dates.forEach(d=>{
+                    if(d.weekdayNum!==curWdNum) return;
+                    const key=makeKey(d.dateStr,code);
+                    const sess=this.sessionsData[key];
+                    if(!sess) return; // 未初始化的不強制改
+                    if(sess.rows[tr]) sess.rows[tr][tc]=srcCell?JSON.parse(JSON.stringify(srcCell)):null;
+                    if(sess.rows[sr]) sess.rows[sr][sc]=tgtCell?JSON.parse(JSON.stringify(tgtCell)):null;
+                    sess.allStudents=buildStudents(sess.rows,sess.cols);
+                });
+            });
         },
         onDragEnd(e){e.target.classList.remove('dragging');this.dragSource=null;},
 
@@ -1578,11 +1698,16 @@ new Vue({
             for(const sheet of this.importPrev.sheets){
                 if(!sheet.code||!sheet._parsed) continue;
                 const def=SESSION_DEFS.find(s=>s.code===sheet.code); if(!def) continue;
+                // ★ 寫入基準名單
+                const baseKey=`${sheet.wdNum}__${sheet.code}`;
+                const baseData=JSON.parse(JSON.stringify(sheet._parsed));
+                delete baseData._meta;
+                this.$set(this.baseSessions,baseKey,baseData);
+                // ★ 套用到所有符合日期（清除舊資料讓 getOrCreate 重新繼承）
                 this.dateList.forEach(d=>{
                     if(d.weekdayNum===sheet.wdNum&&def.weekdays.includes(sheet.wdNum)){
                         const key=makeKey(d.dateStr,sheet.code);
                         const data=JSON.parse(JSON.stringify(sheet._parsed));
-                        delete data._meta;
                         data.allStudents=buildStudents(data.rows,data.cols);
                         this.$set(this.sessionsData,key,data);
                         count++;

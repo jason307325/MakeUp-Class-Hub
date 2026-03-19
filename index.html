@@ -64,7 +64,6 @@
         .submit-btn.orange { background: #ff9f4a; }
         .submit-btn.blue   { background: #4a9eff; }
         .submit-btn.red    { background: #ff6b6b; }
-        .submit-btn.purple { background: #a855f7; }
         .submit-btn.indigo { background: #6366f1; }
 
         .tabs-container { margin: 8px 0 5px; display: flex; flex-wrap: wrap; gap: 7px; }
@@ -75,7 +74,7 @@
 
         .form-card { background: white; border-radius: 22px; padding: 16px; border: 1px solid #dde3ed; margin-top: 12px; }
         .form-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 12px; color: #1e2b3a; }
-        .notice  { background: #fff9e5; padding: 9px 13px; border-radius: 16px; color: #865d20; margin: 9px 0; border-left: 4px solid #f2c94c; font-size: 0.79rem; line-height: 1.5; }
+        .notice { background: #fff9e5; padding: 9px 13px; border-radius: 16px; color: #865d20; margin: 9px 0; border-left: 4px solid #f2c94c; font-size: 0.79rem; line-height: 1.6; }
         .flex-row { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
         .tip { font-size: 0.76rem; color: #2563eb; background: #dbeafe; padding: 4px 11px; border-radius: 40px; display: inline-block; }
         .edit-indicator { background: #ffe4b5; padding: 4px 11px; border-radius: 40px; font-weight: 600; font-size: 0.76rem; }
@@ -85,8 +84,8 @@
         .session-selector select { padding: 5px 11px; border-radius: 40px; border: 1px solid #cbd5e1; background: white; font-size: 0.81rem; }
 
         /* Modal */
-        .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.42); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 14px; }
-        .modal-box  { background: white; border-radius: 22px; padding: 20px; max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.22); }
+        .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 14px; }
+        .modal-box  { background: white; border-radius: 22px; padding: 20px; max-width: 920px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.22); }
         .modal-title { font-size: 1.05rem; font-weight: 700; color: #1e2b3a; margin-bottom: 12px; }
         .preview-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-bottom: 10px; }
         .preview-table th { background: #f2f5f9; padding: 6px 8px; text-align: left; border: 1px solid #dde3ed; font-weight: 600; }
@@ -95,6 +94,7 @@
         .preview-table tr.unmapped td:first-child { color: #b45309; }
         .badge-mapped   { background: #d1fae5; color: #065f46; border-radius: 20px; padding: 1px 8px; font-size: 0.68rem; font-weight: 600; }
         .badge-unmapped { background: #fef3c7; color: #92400e; border-radius: 20px; padding: 1px 8px; font-size: 0.68rem; font-weight: 600; }
+        .quota-preview-tag { display: inline-block; background: #e0f2fe; color: #0369a1; border-radius: 20px; padding: 1px 7px; font-size: 0.65rem; font-weight: 600; margin: 1px; }
 
         @media (max-width: 600px) {
             h1 { font-size: 1rem; }
@@ -114,16 +114,18 @@
             <button class="role-btn" :class="{active:role==='admin'}"   @click="role='admin'">⚙️ 後台</button>
         </div>
     </div>
-    <div class="subtitle">📅 週一顯示固定班級名稱 ｜ 其他日期欄名從 Excel 標題讀取 ｜ 補課名額動態緊接名單</div>
+    <div class="subtitle">
+        📅 分頁命名：「一S1」「三S1」「六B」「日SA」…｜補課名額自動從 Excel 括弧讀取｜補課行動態緊接名單
+    </div>
 
     <!-- ===== 主表格 ===== -->
     <div class="table-wrapper">
         <table>
             <thead>
                 <tr>
-                    <th style="min-width:28px; width:28px;">#</th>
+                    <th style="min-width:28px;width:28px;">#</th>
                     <th v-for="(col,ci) in currentCols" :key="'th'+ci"
-                        :class="{'remark-col': col.isRemark}">
+                        :class="{'remark-col':col.isRemark}">
                         <div class="th-label">{{ col.label }}</div>
                         <div class="th-grades" v-if="!isMonday && col.isClass && getAllowedGrades(ci).length">
                             {{ getAllowedGrades(ci).join('・') }}
@@ -133,10 +135,10 @@
             </thead>
             <tbody>
                 <!-- 動態學生行 -->
-                <tr v-for="(row, ri) in currentSessionData.rows" :key="'r'+ri">
+                <tr v-for="(row,ri) in currentSessionData.rows" :key="'r'+ri">
                     <td class="row-num">{{ ri+1 }}</td>
-                    <td v-for="(col, ci) in currentCols" :key="'c'+ci"
-                        :class="[getCellClass(ri,ci), col.isRemark ? 'remark-cell' : '']"
+                    <td v-for="(col,ci) in currentCols" :key="'c'+ci"
+                        :class="[getCellClass(ri,ci), col.isRemark?'remark-cell':'']"
                         :draggable="role==='admin' && editMode && !col.isRemark && !!getCell(ri,ci)"
                         @dragstart="onDragStart($event,ri,ci)"
                         @dragover.prevent
@@ -155,14 +157,14 @@
                     </td>
                 </tr>
 
-                <!-- 補課名額標題行（緊接名單末尾） -->
+                <!-- 補課名額標題行（動態緊接名單） -->
                 <tr class="quota-header-row">
                     <td class="row-num" style="background:#e8f0fa !important;"></td>
                     <td v-for="(col,ci) in currentCols" :key="'qh'+ci">
                         <template v-if="col.isClass">
                             📋 可補：<b>{{ getQuota(ci).available }}</b>
                         </template>
-                        <span v-else style="color:#bbb; font-size:0.68rem;">備註</span>
+                        <span v-else style="color:#bbb;font-size:0.68rem;">備註</span>
                     </td>
                 </tr>
 
@@ -176,15 +178,15 @@
                                v-model="makeupInputs[ci]"
                                @keyup.enter="submitMakeup(ci)"
                                @blur="submitMakeup(ci)"
-                               :disabled="role !== 'parent'">
-                        <span v-else style="font-size:0.62rem; color:#ccc;">—</span>
+                               :disabled="role!=='parent'">
+                        <span v-else style="font-size:0.62rem;color:#ccc;">—</span>
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- 操作提示 / 編輯切換 -->
+    <!-- 操作提示 -->
     <div class="flex-row" style="justify-content:space-between;flex-wrap:wrap;margin-bottom:4px;">
         <div>
             <span class="tip" v-if="role==='parent'">👆 雙擊學生格請假(綠)；補課行輸入「姓名 級別」登記</span>
@@ -194,7 +196,7 @@
         </div>
         <div v-if="role==='admin'" class="flex-row" style="margin:0;">
             <button class="submit-btn orange" style="margin-top:0;" @click="editMode=!editMode">
-                {{ editMode ? '關閉編輯' : '開啟編輯' }}
+                {{ editMode?'關閉編輯':'開啟編輯' }}
             </button>
         </div>
     </div>
@@ -246,7 +248,9 @@
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:11px;">
             <h3 style="font-size:0.95rem;margin:0;">
                 📊 補課名額 ＆ 允許程度
-                <span style="font-size:0.75rem;color:#6b7280;font-weight:400;">（{{ currentDateLabel }} {{ getSessionDisplay(adminCurrentSession) }}）</span>
+                <span style="font-size:0.74rem;color:#6b7280;font-weight:400;">
+                    （{{ currentDateLabel }} {{ getSessionDisplay(adminCurrentSession) }}）
+                </span>
             </h3>
             <span v-if="isMonday"  style="font-size:0.72rem;color:#22c55e;font-weight:600;">※ 週一：班級名稱固定，程度自動驗證</span>
             <span v-if="!isMonday" style="font-size:0.72rem;color:#f59e0b;font-weight:600;">※ 非週一：請設定各欄允許程度</span>
@@ -255,6 +259,7 @@
             <template v-for="(col,ci) in currentCols">
                 <div v-if="col.isClass" :key="'qp'+ci" class="quota-item">
                     <div class="quota-col-title">欄{{ ci+1 }}：{{ col.label }}</div>
+                    <!-- 允許程度（非週一） -->
                     <div v-if="!isMonday">
                         <div class="quota-grades-label">
                             允許程度：
@@ -268,11 +273,12 @@
                                v-model="currentSessionData.gradeInputs[ci]"
                                @keyup.enter="saveGrades(ci)">
                         <div style="font-size:0.6rem;color:#9ca3af;margin-top:2px;">
-                            2B3→2B,3R,3Y,3B ；1RY→1R,1Y ；直接逗號分隔亦可
+                            2B3→2B,3R,3Y,3B ；1RY→1R,1Y ；逗號分隔亦可
                         </div>
                         <button class="grades-save-btn" @click="saveGrades(ci)">✅ 儲存程度</button>
                     </div>
                     <div v-else class="quota-grades-label" style="color:#22c55e;font-size:0.68rem;">週一固定班級自動驗證</div>
+                    <!-- 名額 -->
                     <div class="quota-row" style="margin-top:7px;"><span>🟢 可補</span><span class="quota-value">{{ getQuota(ci).available }}</span></div>
                     <div class="quota-row"><span>⏳ 候補</span><span class="quota-value">{{ getQuota(ci).waitlist }}</span></div>
                     <div class="flex-row" style="margin-top:5px;">
@@ -287,19 +293,24 @@
     <!-- ===== 後台：管理介面 ===== -->
     <div class="form-card" v-if="role==='admin'">
         <div class="form-title">⚙️ 後台管理</div>
+
         <div class="notice">
-            操作流程：① 設定起始日期並產生日期 → ② 上傳 Excel（多分頁自動對應時段）→ ③ 設定各欄允許程度 → ④ 調整補課名額
+            <b>📌 Excel 分頁命名規則（星期縮寫 + 時段代號）：</b><br>
+            「一S1」→ 週一16:00 ／「三S1」→ 週三16:00 ／「六B」→ 週六09:40 ／「日SA」→ 週日08:00<br>
+            系統會把每個分頁套用到日期表內<b>所有符合該星期幾</b>的對應時段。<br><br>
+            <b>📌 補課名額讀取：</b>在名單中找到含「補課名額」的列，讀取<b>下一列</b>括弧內的數字，例如 <code>(3)</code> 或 <code>（2）</code>。
         </div>
 
         <!-- 日期產生 -->
         <div class="flex-row" style="margin-bottom:12px;">
             <div>
                 <label style="font-size:0.78rem;display:block;margin-bottom:2px;">起始日期</label>
-                <input type="date" v-model="startDateInput" style="padding:5px 10px;border-radius:30px;border:1px solid #bdc9d9;font-size:0.81rem;">
+                <input type="date" v-model="startDateInput"
+                       style="padding:5px 10px;border-radius:30px;border:1px solid #bdc9d9;font-size:0.81rem;">
             </div>
             <div>
                 <label style="font-size:0.78rem;display:block;margin-bottom:2px;">週數</label>
-                <input type="number" min="1" max="16" v-model.number="weeksCount"
+                <input type="number" min="1" max="20" v-model.number="weeksCount"
                        style="width:55px;padding:5px;border-radius:30px;border:1px solid #bdc9d9;text-align:center;font-size:0.81rem;">
             </div>
             <button class="submit-btn blue" style="margin-top:0;" @click="generateDates">📅 產生日期</button>
@@ -308,20 +319,14 @@
         <!-- Excel 多分頁上傳 -->
         <div style="background:#e8f0fe;border-radius:22px;padding:14px;border:2px dashed #8aa9c9;margin-bottom:12px;">
             <div style="font-weight:700;margin-bottom:7px;font-size:0.9rem;color:#1e3a6e;">
-                📥 上傳 Excel（多分頁自動對應時段）
-            </div>
-            <div class="notice" style="margin-top:0;">
-                <b>分頁命名規則</b>（對應時段，範例）：<br>
-                S1 或 春S1 → 週一16:00 ； S2 → 17:30 ； A → 週六08:00 ； SA → 週日08:00 …<br>
-                <b>班級欄判斷</b>：標題含數字且<u>不以「老師」結尾</u> → 班級欄；其餘 → 備註欄（仍顯示，不驗證程度）<br>
-                上傳後先顯示<b>預覽確認畫面</b>，確認無誤後才寫入系統。
+                📥 上傳 Excel（多分頁，自動對應時段）
             </div>
             <div class="flex-row">
                 <input type="file" accept=".xlsx,.xls" @change="handleMultiSheetUpload"
                        style="background:white;border-radius:30px;padding:5px;font-size:0.78rem;flex:1;">
                 <button class="submit-btn blue" style="margin-top:0;" @click="downloadTemplate">📎 下載範例</button>
             </div>
-            <div style="font-size:0.73rem;color:#2563eb;margin-top:7px;">
+            <div style="font-size:0.73rem;color:#2563eb;margin-top:8px;">
                 僅上傳至目前時段（單一分頁）：
                 <input type="file" accept=".xlsx,.xls" @change="handleSingleSheetUpload"
                        style="background:white;border-radius:30px;padding:3px 8px;font-size:0.72rem;margin-left:4px;">
@@ -357,7 +362,8 @@
         <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:10px;">
             <div>
                 <label style="font-size:0.78rem;">欄位</label>
-                <select v-model="teacherForm.colIdx" style="width:100%;padding:5px;border-radius:30px;border:1px solid #bdc9d9;font-size:0.78rem;">
+                <select v-model="teacherForm.colIdx"
+                        style="width:100%;padding:5px;border-radius:30px;border:1px solid #bdc9d9;font-size:0.78rem;">
                     <template v-for="(col,ci) in currentCols">
                         <option v-if="col.isClass" :key="ci" :value="ci">欄{{ ci+1 }} {{ col.label }}</option>
                     </template>
@@ -378,16 +384,18 @@
         <div class="modal-box">
             <div class="modal-title">📋 Excel 匯入預覽 — 確認後才會寫入系統</div>
             <div class="notice">
-                綠色 = 成功對應時段；橙色 = 無法對應（將略過）。
-                已對應的分頁將套用至日期表內所有符合星期的日期。
+                ✅ 綠色 = 成功對應時段；🟡 橙色 = 無法對應（略過）。<br>
+                已對應的分頁將套用至日期表內<b>所有符合該星期幾</b>的日期。
             </div>
             <table class="preview-table">
                 <thead>
                     <tr>
-                        <th>Excel 分頁名</th>
+                        <th>分頁名稱</th>
                         <th>對應時段</th>
-                        <th>班級欄（納入驗證）</th>
-                        <th>備註欄（保留顯示）</th>
+                        <th>星期</th>
+                        <th>班級欄</th>
+                        <th>備註欄</th>
+                        <th>補課名額（從Excel讀取）</th>
                         <th>學生筆數</th>
                     </tr>
                 </thead>
@@ -399,19 +407,26 @@
                             <span v-if="s.sessionCode"  class="badge-mapped">{{ s.sessionCode.replace('春','') }} {{ s.sessionDesc }}</span>
                             <span v-else class="badge-unmapped">無法對應（略過）</span>
                         </td>
+                        <td style="font-size:0.72rem;">{{ s.weekdayLabel || '—' }}</td>
                         <td>
                             <span v-for="c in s.classCols" :key="c" class="grade-tag" style="margin:1px;">{{ c }}</span>
                             <span v-if="!s.classCols.length" style="color:#aaa;">—</span>
                         </td>
-                        <td style="font-size:0.68rem;color:#9ca3af;">
-                            {{ s.remarkCols.join('、') || '—' }}
+                        <td style="font-size:0.68rem;color:#9ca3af;">{{ s.remarkCols.join('、') || '—' }}</td>
+                        <td>
+                            <template v-if="s.quotaValues && s.quotaValues.some(v=>v>0)">
+                                <span v-for="(v,qi) in s.quotaValues" :key="qi" class="quota-preview-tag" v-if="s.classCols[qi]">
+                                    {{ s.classCols[qi] }}:({{ v }})
+                                </span>
+                            </template>
+                            <span v-else style="color:#aaa;font-size:0.72rem;">未偵測到（將設為0）</span>
                         </td>
                         <td style="text-align:center;">{{ s.studentCount }}</td>
                     </tr>
                 </tbody>
             </table>
-            <div style="font-size:0.75rem;color:#6b7280;margin-bottom:10px;">
-                ※ 班級欄判斷：含數字且不以「老師」結尾。
+            <div style="font-size:0.74rem;color:#6b7280;margin-bottom:10px;">
+                ※ 班級欄：標題含數字且不以「老師」結尾。補課名額：偵測「補課名額」列下方的括弧數字。
             </div>
             <div class="flex-row">
                 <button class="submit-btn green" @click="confirmImport">✅ 確認匯入</button>
@@ -420,16 +435,16 @@
         </div>
     </div>
 
-</div><!-- /app-container -->
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
 <script>
 (function(){
 'use strict';
 
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
 // 常數
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
 const MONDAY_WD = 1;
 
 const MONDAY_COLS = [
@@ -463,6 +478,11 @@ const SESSION_DEFS = [
     {code:'春SG', desc:'17:10', weekdays:[0]},
 ];
 
+// 星期縮寫 → getDay() 數值
+const WEEKDAY_MAP = {
+    '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '日':0, '天':0
+};
+
 const MON_S1_ROWS = [
     [{name:'朱宓清',group:'1Y'},{name:'陳子元',group:'2R'},{name:'李恩燦',group:'2B'},{name:'林章綺',group:'3Y'},{name:'李羽程',group:'4B'},{name:'周道',  group:'5B'},{name:'許諾',  group:'7R',star:true},{name:'3/2幼兒園加入',group:''}],
     [{name:'許宸羽',group:'1Y'},{name:'廖奕涵',group:'2R'},{name:'黃培潔',group:'2B'},{name:'鄭智允',group:'3R'},{name:'顏樹祐',group:'4Y'},{name:'黃湘芸',group:'5Y'},{name:'顏語彤',group:'7B'},null],
@@ -476,43 +496,86 @@ const MON_S1_ROWS = [
     [null,null,null,null,null,null,null,null],
 ];
 
-// ──────────────────────────────────────────────
-// 班級欄判斷
-// 含數字 且 不以「老師」結尾
-// ──────────────────────────────────────────────
-function isClassCol(label) {
-    if (!label) return false;
-    const s = label.toString().trim();
-    if (!s) return false;
-    if (s.endsWith('老師')) return false;
-    return /\d/.test(s);
-}
+// ─────────────────────────────────────────────────────────
+// ★ 核心：分頁名稱解析
+// 格式：「星期縮寫」+「時段代號」  例如 一S1 / 三S1 / 六B / 日SA
+// 回傳 { weekdayNum, sessionDef } 或 null
+// ─────────────────────────────────────────────────────────
+function parseSheetName(name) {
+    const s = name.trim();
+    if (!s) return null;
 
-// ──────────────────────────────────────────────
-// 分頁名 → 時段對應
-// ──────────────────────────────────────────────
-function sheetNameToSession(name) {
-    const n = name.trim();
-    // 完全比對（含春）
-    for (const s of SESSION_DEFS) {
-        if (n === s.code) return s;
-    }
-    // 去除「春」前綴後比對
-    const nNoSpring = n.replace(/^春/, '');
-    for (const s of SESSION_DEFS) {
-        if (nNoSpring.toUpperCase() === s.code.replace('春','').toUpperCase()) return s;
+    // 第一個字元為星期縮寫
+    const wdChar = s[0];
+    const wdNum  = WEEKDAY_MAP[wdChar];
+    if (wdNum === undefined) return null;
+
+    // 剩餘部分為時段代號（去掉「春」前綴後比對）
+    const rest = s.slice(1).trim();
+    if (!rest) return null;
+
+    for (const def of SESSION_DEFS) {
+        const code = def.code.replace('春', '');
+        if (rest.toUpperCase() === code.toUpperCase()) {
+            // 確認該時段確實包含此星期幾
+            if (def.weekdays.includes(wdNum)) {
+                return { weekdayNum: wdNum, sessionDef: def };
+            }
+        }
     }
     return null;
 }
 
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// ★ 核心：從 raw rows 解析補課名額（括弧數字）
+// 找含「補課名額」的列，讀取下一列各欄的括弧數字
+// 支援 (3) (３) （3） （３）
+// ─────────────────────────────────────────────────────────
+function extractQuotaValues(rawRows, validColIndices) {
+    // 先找「補課名額」所在列
+    let quotaRowIdx = -1;
+    for (let r = 0; r < rawRows.length; r++) {
+        const rowStr = rawRows[r].map(v=>(v||'').toString()).join('');
+        if (rowStr.includes('補課名額')) {
+            quotaRowIdx = r;
+            break;
+        }
+    }
+    if (quotaRowIdx < 0 || quotaRowIdx + 1 >= rawRows.length) {
+        return null; // 未找到
+    }
+
+    const valueRow = rawRows[quotaRowIdx + 1];
+    const result = validColIndices.map(ci => {
+        const cell = (valueRow[ci] || '').toString().trim();
+        // 比對全形/半形括弧內的數字，例如 (3) (３) （3） （３）
+        const m = cell.match(/[（(][\s]*(\d+|[０-９]+)[\s]*[）)]/);
+        if (!m) return 0;
+        // 轉換全形數字
+        const num = m[1].replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFF10 + 0x30));
+        return parseInt(num, 10) || 0;
+    });
+
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────
+// 班級欄判斷：含數字且不以「老師」結尾
+// ─────────────────────────────────────────────────────────
+function isClassCol(label) {
+    if (!label) return false;
+    const s = label.toString().trim();
+    if (!s || s.endsWith('老師')) return false;
+    return /\d/.test(s);
+}
+
+// ─────────────────────────────────────────────────────────
 // 程度字串解析  "2B3" → ["2B","3R","3Y","3B"]
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
 function parseGrades(str) {
     if (!str || !str.trim()) return [];
     const result = new Set();
-    const parts = str.split(/[,，、\s]+/).map(s => s.trim()).filter(Boolean);
-    for (const part of parts) {
+    str.split(/[,，、\s]+/).map(s=>s.trim()).filter(Boolean).forEach(part => {
         const upper = part.toUpperCase();
         const re = /(\d+)([RYB]*)/g;
         let m;
@@ -521,9 +584,9 @@ function parseGrades(str) {
             if (!colors.length) { result.add(lv+'R'); result.add(lv+'Y'); result.add(lv+'B'); }
             else colors.forEach(c => result.add(lv+c));
         }
-    }
-    return [...result].sort((a,b) => {
-        const la=parseInt(a), lb=parseInt(b);
+    });
+    return [...result].sort((a,b)=>{
+        const la=parseInt(a),lb=parseInt(b);
         return la!==lb ? la-lb : a.localeCompare(b);
     });
 }
@@ -536,7 +599,6 @@ function gradeAllowed(groupRaw, allowed) {
     return allowed.includes(m[2] ? m[1]+m[2] : null);
 }
 
-// 週一固定班級驗證函式
 const MON_GRADE_FNS = [
     g => /^1[RY]$/i.test(g),
     g => /^1B$/i.test(g) || /^2R$/i.test(g),
@@ -548,9 +610,9 @@ const MON_GRADE_FNS = [
     g => false,
 ];
 
-// ──────────────────────────────────────────────
-// Session 資料結構工具
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// Session 資料結構
+// ─────────────────────────────────────────────────────────
 function makeKey(dateStr, code) { return `${dateStr}__${code}`; }
 
 function makeEmptyQuotas(n) {
@@ -558,16 +620,18 @@ function makeEmptyQuotas(n) {
 }
 
 function buildStudents(rows, cols) {
-    const list = []; let id = 0;
+    const list=[]; let id=0;
     for (let r=0; r<rows.length; r++) {
         for (let c=0; c<cols.length; c++) {
             const cell = rows[r] && rows[r][c];
             if (cell && cell.name) {
                 const g = (cell.group||'').replace(/\*/g,'');
-                list.push({name:cell.name, group:g,
-                           star:!!(cell.star||(cell.group||'').includes('*')),
-                           row:r, col:c, id:id++,
-                           leave:false, present:false, leaveSessions:[]});
+                list.push({
+                    name:cell.name, group:g,
+                    star:!!(cell.star||(cell.group||'').includes('*')),
+                    row:r, col:c, id:id++,
+                    leave:false, present:false, leaveSessions:[]
+                });
             }
         }
     }
@@ -575,13 +639,14 @@ function buildStudents(rows, cols) {
 }
 
 function createEmptySession(colDefs) {
-    const cols = colDefs
-        ? colDefs.map(c=>({...c}))
-        : [{label:'第1欄',isClass:true,isRemark:false}];
+    const cols = colDefs ? colDefs.map(c=>({...c})) : [{label:'第1欄',isClass:true,isRemark:false}];
     const rows = Array.from({length:8}, () => Array(cols.length).fill(null));
-    return {cols, rows, allStudents:[], quotas:makeEmptyQuotas(cols.length),
-            allowedGrades:Array(cols.length).fill(null),
-            gradeInputs:Array(cols.length).fill('')};
+    return {
+        cols, rows, allStudents:[],
+        quotas: makeEmptyQuotas(cols.length),
+        allowedGrades: Array(cols.length).fill(null),
+        gradeInputs:   Array(cols.length).fill(''),
+    };
 }
 
 function createMonS1Session() {
@@ -589,71 +654,98 @@ function createMonS1Session() {
     const rows = MON_S1_ROWS.map(r => cols.map((_,ci) => r[ci] ? {...r[ci]} : null));
     while (rows.length < 10) rows.push(Array(cols.length).fill(null));
     const quotas = makeEmptyQuotas(cols.length);
-    [0,1,2,3,4,5,6,7].forEach((v,i)=>{quotas[i].available=[0,2,3,3,3,4,4,0][i];});
-    return {cols, rows, allStudents:buildStudents(rows,cols),
-            quotas, allowedGrades:Array(cols.length).fill(null),
-            gradeInputs:Array(cols.length).fill('')};
+    [0,2,3,3,3,4,4,0].forEach((v,i)=>{ quotas[i].available=v; });
+    return {
+        cols, rows, allStudents: buildStudents(rows, cols),
+        quotas,
+        allowedGrades: Array(cols.length).fill(null),
+        gradeInputs:   Array(cols.length).fill(''),
+    };
 }
 
-// ──────────────────────────────────────────────
-// 解析 Worksheet → session 物件
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// ★ 解析 Worksheet → session 物件（含補課名額）
+// ─────────────────────────────────────────────────────────
 function parseSheet(ws) {
     const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
     if (!raw || raw.length < 1) return null;
 
-    // 找第一列作為標題
+    // 第一列標題
     const headerRaw = raw[0].map(v => (v||'').toString().trim());
-    // 過濾掉末尾空白標題
     let lastNonEmpty = -1;
     headerRaw.forEach((h,i) => { if (h) lastNonEmpty=i; });
     if (lastNonEmpty < 0) return null;
 
+    // 只保留有標題的欄
     const validIdx = [];
     for (let i=0; i<=lastNonEmpty; i++) { if (headerRaw[i]) validIdx.push(i); }
 
     const cols = validIdx.map(i => ({
-        label: headerRaw[i],
-        isClass: isClassCol(headerRaw[i]),
+        label:    headerRaw[i],
+        isClass:  isClassCol(headerRaw[i]),
         isRemark: !isClassCol(headerRaw[i]),
     }));
 
-    // 解析資料列（跳過全空列）
-    const rows = [];
+    // ★ 找「補課名額」列的位置，同時收集學生行
+    let quotaRowIdx = -1;
     for (let r=1; r<raw.length; r++) {
-        const rawRow = raw[r];
+        const rowStr = validIdx.map(i=>(raw[r][i]||'').toString()).join('');
+        if (rowStr.includes('補課名額')) { quotaRowIdx = r; break; }
+    }
+
+    // 學生行：第1列到「補課名額」列之前（或到末尾）
+    const studentEndRow = quotaRowIdx >= 0 ? quotaRowIdx : raw.length;
+    const rows = [];
+    for (let r=1; r<studentEndRow; r++) {
         const hasData = validIdx.some(i => {
-            const v = rawRow[i]; return v!==null && v!==undefined && v.toString().trim()!=='';
+            const v = raw[r][i]; return v!==null && v!==undefined && v.toString().trim()!=='';
         });
         if (!hasData) continue;
         rows.push(validIdx.map(i => {
-            const v = (rawRow[i]||'').toString().trim();
+            const v = (raw[r][i]||'').toString().trim();
             if (!v) return null;
             const parts = v.split(/\s+/);
-            const name = parts[0];
-            const group = parts.length>1 ? parts[1].replace(/\*/g,'') : '';
-            const star  = parts.length>1 && parts[1].includes('*');
-            return {name, group, star};
+            return {
+                name:  parts[0],
+                group: parts.length>1 ? parts[1].replace(/\*/g,'') : '',
+                star:  parts.length>1 && parts[1].includes('*'),
+            };
         }));
     }
     if (!rows.length) rows.push(Array(cols.length).fill(null));
 
-    const classCols  = cols.filter(c=>c.isClass).map(c=>c.label);
+    // ★ 讀取補課名額（「補課名額」列的下一列括弧數字）
+    const quotaValues = extractQuotaValues(raw, validIdx);
+    const quotas = makeEmptyQuotas(cols.length);
+    if (quotaValues) {
+        cols.forEach((col, ci) => {
+            if (col.isClass) quotas[ci].available = quotaValues[ci] || 0;
+        });
+    }
+
+    const classCols  = cols.filter(c=>c.isClass ).map(c=>c.label);
     const remarkCols = cols.filter(c=>c.isRemark).map(c=>c.label);
+    // 只取班級欄對應的名額值用於預覽
+    const classQuotaValues = cols.map((c,ci) => c.isClass ? quotas[ci].available : null)
+                                  .filter(v => v !== null);
 
     return {
         cols, rows,
-        allStudents: buildStudents(rows, cols),
-        quotas: makeEmptyQuotas(cols.length),
+        allStudents:   buildStudents(rows, cols),
+        quotas,
         allowedGrades: Array(cols.length).fill(null),
-        gradeInputs: Array(cols.length).fill(''),
-        _meta: {classCols, remarkCols, studentCount: buildStudents(rows,cols).length},
+        gradeInputs:   Array(cols.length).fill(''),
+        _meta: {
+            classCols, remarkCols,
+            studentCount: buildStudents(rows, cols).length,
+            quotaValues: classQuotaValues,
+        },
     };
 }
 
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
 // Vue App
-// ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
 new Vue({
     el: '#app',
     data: {
@@ -672,7 +764,7 @@ new Vue({
         makeupRecords: [],
         editMode: false,
         dragSource: null,
-        importPreview: {show:false, sheets:[], pendingWb:null},
+        importPreview: {show:false, sheets:[]},
     },
 
     computed: {
@@ -685,7 +777,7 @@ new Vue({
         isMonday()   { return this.currentWeekday === MONDAY_WD; },
         currentKey() { return makeKey(this.currentDate, this.currentSessionCode); },
         currentSessionData() { return this.getOrCreate(this.currentDate, this.currentSessionCode); },
-        currentCols() { return this.currentSessionData.cols || []; },
+        currentCols()        { return this.currentSessionData.cols || []; },
         filteredSessionList() {
             if (this.currentWeekday < 0) return SESSION_DEFS;
             return SESSION_DEFS.filter(s => s.weekdays.includes(this.currentWeekday));
@@ -706,13 +798,13 @@ new Vue({
     },
 
     methods: {
-        // ── 資料存取 ──────────────────────────
+        // ── 資料存取 ──
         getOrCreate(dateStr, code) {
             if (!dateStr) return createEmptySession();
             const key = makeKey(dateStr, code);
             if (!this.sessionsData[key]) {
-                const de  = this.dateList.find(d=>d.dateStr===dateStr);
-                const isMon = de && de.weekdayNum===MONDAY_WD;
+                const de   = this.dateList.find(d=>d.dateStr===dateStr);
+                const isMon = de && de.weekdayNum === MONDAY_WD;
                 this.$set(this.sessionsData, key,
                     (isMon && code==='春S1') ? createMonS1Session() : createEmptySession());
             }
@@ -723,11 +815,9 @@ new Vue({
             this.adminQuotaValues = (this.currentSessionData.quotas||[]).map(q=>q.available);
         },
 
-        // ── 欄位 / 程度 ──────────────────────
+        // ── 欄位 / 程度 ──
         getAllowedGrades(ci) { return this.currentSessionData.allowedGrades?.[ci] || []; },
-        getQuota(ci) {
-            return this.currentSessionData.quotas?.[ci] || {available:0, waitlist:0};
-        },
+        getQuota(ci) { return this.currentSessionData.quotas?.[ci] || {available:0, waitlist:0}; },
         saveGrades(ci) {
             const input = this.currentSessionData.gradeInputs?.[ci] || '';
             const grades = parseGrades(input);
@@ -738,7 +828,7 @@ new Vue({
             this.$forceUpdate();
         },
 
-        // ── 表格資料 ─────────────────────────
+        // ── 表格資料 ──
         getCell(ri, ci) { return this.currentSessionData.rows?.[ri]?.[ci] || null; },
         getCellClass(ri, ci) {
             const stu = this.currentSessionData.allStudents.find(s=>s.row===ri&&s.col===ci);
@@ -752,7 +842,7 @@ new Vue({
             return m ? m[0].toUpperCase() : 'default';
         },
 
-        // ── 補課 ──────────────────────────────
+        // ── 補課 ──
         getMakeupPlaceholder(ci) {
             const avail = this.getQuota(ci).available;
             const grades = this.getAllowedGrades(ci);
@@ -760,7 +850,7 @@ new Vue({
             return `可補: ${avail}`;
         },
         submitMakeup(ci) {
-            if (this.role!=='parent') return;
+            if (this.role !== 'parent') return;
             const input = (this.makeupInputs[ci]||'').trim();
             if (!input) return;
             const parts = input.split(/\s+/);
@@ -774,7 +864,6 @@ new Vue({
                 alert('此欄為備註欄，無法登記補課');
                 this.makeupInputs[ci]=''; return;
             }
-
             // 程度驗證
             if (this.isMonday) {
                 const fn = MON_GRADE_FNS[ci];
@@ -789,7 +878,6 @@ new Vue({
                     this.makeupInputs[ci]=''; return;
                 }
             }
-
             const quota = this.currentSessionData.quotas?.[ci];
             if (!quota || quota.available<=0) {
                 alert('此欄目前無可補名額'); this.makeupInputs[ci]=''; return;
@@ -815,10 +903,10 @@ new Vue({
             this.$forceUpdate();
         },
 
-        // ── 請假 / 點名 ──────────────────────
+        // ── 請假 / 點名 ──
         onDblClick(ri, ci) {
             if (this.currentCols[ci]?.isRemark) return;
-            const cell = this.getCell(ri,ci);
+            const cell = this.getCell(ri, ci);
             if (!cell) return;
             const stu = this.currentSessionData.allStudents.find(s=>s.row===ri&&s.col===ci);
             if (!stu) return;
@@ -859,7 +947,7 @@ new Vue({
             this.$forceUpdate();
         },
 
-        // ── 編輯模式 ─────────────────────────
+        // ── 編輯模式 ──
         onCellClick(ri, ci, event) {
             if (!(this.role==='admin'&&this.editMode)) return;
             if (this.currentCols[ci]?.isRemark) return;
@@ -904,7 +992,7 @@ new Vue({
             this.$forceUpdate();
         },
 
-        // ── 拖曳 ──────────────────────────────
+        // ── 拖曳 ──
         onDragStart(e,ri,ci) {
             if (!(this.role==='admin'&&this.editMode)) return;
             this.dragSource={ri,ci};
@@ -915,8 +1003,7 @@ new Vue({
             e.preventDefault();
             if (!this.dragSource) return;
             const {ri:sr,ci:sc}=this.dragSource;
-            if (sr===tr&&sc===tc) {this.dragSource=null;return;}
-            if (this.currentCols[tc]?.isRemark) {this.dragSource=null;return;}
+            if (sr===tr&&sc===tc||this.currentCols[tc]?.isRemark) {this.dragSource=null;return;}
             const src=this.currentSessionData.rows[sr][sc];
             const tgt=this.currentSessionData.rows[tr][tc];
             if (!src) {this.dragSource=null;return;}
@@ -929,18 +1016,18 @@ new Vue({
             this.dragSource=null;
             this.$forceUpdate();
         },
-        onDragEnd(e) {e.target.classList.remove('dragging');this.dragSource=null;},
+        onDragEnd(e) { e.target.classList.remove('dragging'); this.dragSource=null; },
 
-        // ── 日期 / 時段 ──────────────────────
+        // ── 日期 / 時段 ──
         changeDate(idx) {
             this.currentDateIndex=idx;
             const fl=this.filteredSessionList;
             if (fl.length&&!fl.some(s=>s.code===this.currentSessionCode)) this.currentSessionCode=fl[0].code;
         },
-        selectSession(code) {this.currentSessionCode=code;},
-        loadSessionData(code) {this.currentSessionCode=code;},
-        isSessionAvailable(code) {return this.filteredSessionList.some(s=>s.code===code);},
-        getSessionDisplay(code) {
+        selectSession(code)  { this.currentSessionCode=code; },
+        loadSessionData(code){ this.currentSessionCode=code; },
+        isSessionAvailable(code){ return this.filteredSessionList.some(s=>s.code===code); },
+        getSessionDisplay(code){
             const s=SESSION_DEFS.find(s=>s.code===code);
             return s?`${s.code.replace('春','')} ${s.desc}`:code;
         },
@@ -952,8 +1039,11 @@ new Vue({
             for (let i=0;i<days;i++) {
                 const d=new Date(start); d.setDate(start.getDate()+i);
                 const wn=d.getDay();
-                dates.push({dateStr:`${d.getMonth()+1}/${d.getDate()}`,
-                            weekday:['日','一','二','三','四','五','六'][wn], weekdayNum:wn});
+                dates.push({
+                    dateStr:`${d.getMonth()+1}/${d.getDate()}`,
+                    weekday:['日','一','二','三','四','五','六'][wn],
+                    weekdayNum:wn
+                });
             }
             this.dateList=dates;
             this.currentDateIndex=0;
@@ -966,7 +1056,7 @@ new Vue({
             });
         },
 
-        // ── 名額 ──────────────────────────────
+        // ── 名額 ──
         updateQuota(ci) {
             const val=this.adminQuotaValues[ci];
             if (val>=0 && this.currentSessionData.quotas?.[ci]) {
@@ -988,7 +1078,7 @@ new Vue({
             this.$forceUpdate();
         },
 
-        // ── 複製 / 重置 ──────────────────────
+        // ── 複製 / 重置 ──
         copyFromPrev() {
             const idx=SESSION_DEFS.findIndex(s=>s.code===this.adminCurrentSession);
             if (idx>0) {
@@ -1008,53 +1098,63 @@ new Vue({
             alert(`已重置 ${this.currentDateLabel} ${this.adminCurrentSession}`);
         },
 
-        // ══════════════════════════════════════
-        // Excel 多分頁匯入
-        // ══════════════════════════════════════
+        // ══════════════════════════════════════════════════
+        // ★ Excel 多分頁匯入（使用新的分頁名解析邏輯）
+        // ══════════════════════════════════════════════════
         handleMultiSheetUpload(event) {
             const file=event.target.files[0]; if (!file) return;
             const reader=new FileReader();
             reader.onload=(e)=>{
                 const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
                 const sheets=[];
+                const WD_LABELS = ['日','一','二','三','四','五','六'];
+
                 for (const sheetName of wb.SheetNames) {
-                    const sd=sheetNameToSession(sheetName);
-                    const parsed=parseSheet(wb.Sheets[sheetName]);
+                    const parsed = parseSheetName(sheetName);  // ★ 新邏輯
+                    const sheetData = parseSheet(wb.Sheets[sheetName]);
+
                     sheets.push({
-                        name:sheetName,
-                        sessionCode:  sd ? sd.code : null,
-                        sessionDesc:  sd ? sd.desc : '',
-                        sessionWeekdays: sd ? sd.weekdays : [],
-                        classCols:  parsed ? parsed._meta.classCols  : [],
-                        remarkCols: parsed ? parsed._meta.remarkCols : [],
-                        studentCount: parsed ? parsed._meta.studentCount : 0,
-                        _parsed: parsed,
+                        name:         sheetName,
+                        sessionCode:  parsed ? parsed.sessionDef.code : null,
+                        sessionDesc:  parsed ? parsed.sessionDef.desc : '',
+                        weekdayNum:   parsed ? parsed.weekdayNum : null,
+                        weekdayLabel: parsed ? `週${WD_LABELS[parsed.weekdayNum]}` : null,
+                        classCols:    sheetData ? sheetData._meta.classCols  : [],
+                        remarkCols:   sheetData ? sheetData._meta.remarkCols : [],
+                        quotaValues:  sheetData ? sheetData._meta.quotaValues : [],
+                        studentCount: sheetData ? sheetData._meta.studentCount : 0,
+                        _parsed:      sheetData,
                     });
                 }
-                this.importPreview={show:true, sheets, pendingWb:wb};
+                this.importPreview={show:true, sheets};
             };
             reader.readAsArrayBuffer(file);
             event.target.value='';
         },
+
         confirmImport() {
             let count=0;
             for (const sheet of this.importPreview.sheets) {
                 if (!sheet.sessionCode || !sheet._parsed) continue;
-                const sessDef=SESSION_DEFS.find(s=>s.code===sheet.sessionCode);
+                const sessDef = SESSION_DEFS.find(s=>s.code===sheet.sessionCode);
                 if (!sessDef) continue;
+                const wdNum = sheet.weekdayNum;  // ★ 只套用到指定星期幾
+
                 this.dateList.forEach(d=>{
-                    if (sessDef.weekdays.includes(d.weekdayNum)) {
-                        const key=makeKey(d.dateStr,sheet.sessionCode);
+                    // ★ 必須同時符合星期幾 AND 時段的 weekdays
+                    if (d.weekdayNum===wdNum && sessDef.weekdays.includes(wdNum)) {
+                        const key=makeKey(d.dateStr, sheet.sessionCode);
                         const data=JSON.parse(JSON.stringify(sheet._parsed));
                         delete data._meta;
-                        data.allStudents=buildStudents(data.rows,data.cols);
-                        this.$set(this.sessionsData,key,data);
+                        data.allStudents=buildStudents(data.rows, data.cols);
+                        this.$set(this.sessionsData, key, data);
                         count++;
                     }
                 });
             }
             this.importPreview.show=false;
             this.syncAdminValues();
+            this.$forceUpdate();
             alert(`✅ 匯入完成！共寫入 ${count} 個日期×時段組合。`);
         },
 
@@ -1078,36 +1178,42 @@ new Vue({
             event.target.value='';
         },
 
-        // 下載範例 Excel
+        // 下載範例 Excel（含補課名額示範）
         downloadTemplate() {
             const wb=XLSX.utils.book_new();
 
-            // S1 分頁
-            const s1h=MONDAY_COLS.map(c=>c.label);
-            const s1d=[s1h];
-            MON_S1_ROWS.slice(0,7).forEach(r=>{
-                s1d.push(MONDAY_COLS.map((_,ci)=>{
-                    const c=r[ci]; return c&&c.name?`${c.name}${c.group?' '+c.group:''}${c.star?'*':''}` :'';
-                }));
-            });
-            XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s1d),'S1');
-
-            // B 分頁示範（週六 09:40）
-            const bh=['2B3範例班','5+6範例班','教師備註'];
-            const bd=[bh,
-                ['王小明 2B','林大花 5Y','記事1'],
-                ['李美美 3R','陳阿強 6B',''],
-                ['張三   3Y','',''],
+            // 分頁「一S1」（週一16:00）
+            const s1Data=[
+                MONDAY_COLS.map(c=>c.label),
+                ...MON_S1_ROWS.slice(0,7).map(r =>
+                    MONDAY_COLS.map((_,ci) => {
+                        const c=r[ci]; return c&&c.name?`${c.name}${c.group?' '+c.group:''}${c.star?'*':''}` :'';
+                    })
+                ),
+                ['補課名額','','','','','','',''],   // 補課名額標題列
+                ['(0)','(2)','(3)','(3)','(3)','(4)','(4)','(0)'], // 括弧數字列
             ];
-            XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(bd),'B');
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s1Data), '一S1');
 
-            // SA 分頁示範（週日 08:00）
-            const sah=['7以上進階','家長備註'];
-            const sad=[sah,
+            // 分頁「六B」（週六09:40）
+            const bData=[
+                ['2B3範例班','5+6範例班','教師備註'],
+                ['王小明 2B','林大花 5Y','記事'],
+                ['李美美 3R','陳阿強 6B',''],
+                ['補課名額','',''],
+                ['(2)','(3)',''],
+            ];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(bData), '六B');
+
+            // 分頁「日SA」（週日08:00）
+            const saData=[
+                ['7以上進階','家長備註'],
                 ['黃大為 7R',''],
                 ['林小芬 8Y','特殊需求'],
+                ['補課名額',''],
+                ['(1)',''],
             ];
-            XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sad),'SA');
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(saData), '日SA');
 
             XLSX.writeFile(wb,'春季課程範例.xlsx');
         },
@@ -1115,7 +1221,7 @@ new Vue({
 
     mounted() {
         const h=window.location.hostname;
-        if (h.startsWith('parent'))  this.role='parent';
+        if (h.startsWith('parent'))       this.role='parent';
         else if (h.startsWith('teacher')) this.role='teacher';
         else if (h.startsWith('admin'))   this.role='admin';
         this.generateDates();

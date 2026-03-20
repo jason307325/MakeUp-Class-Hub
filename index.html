@@ -267,10 +267,13 @@ td.col-dragging-col{opacity:0.35;}
       <tr>
         <th style="min-width:26px;width:26px;">#</th>
         <th v-for="(col,ci) in currentCols" :key="'th'+ci"
-            :class="[col.isRemark?'remark-th':(col.label?'admin-th':'empty-th'),
-                     role==='admin'?'admin-th':'',
-                     colDragOver===ci?'col-drag-over':'',
-                     colDraggingIdx===ci?'col-dragging':'']"
+            :class="{
+              'remark-th': col.isRemark,
+              'empty-th': !col.isRemark && !col.label,
+              'admin-th': !col.isRemark && (col.label || role==='admin'),
+              'col-drag-over': colDragOver===ci,
+              'col-dragging': colDraggingIdx===ci
+            }"
             :draggable="role==='admin'"
             @dragstart="onColDragStart($event,ci)"
             @dragover.prevent="onColDragOver($event,ci)"
@@ -298,10 +301,7 @@ td.col-dragging-col{opacity:0.35;}
       <tr v-for="(row,ri) in currentSessionData.rows" :key="'r'+ri">
         <td class="row-num">{{ ri+1 }}</td>
         <td v-for="(col,ci) in currentCols" :key="'c'+ci"
-            :class="[getCellClass(ri,ci),
-                     col.isRemark?'remark-td':(col.label?'':'empty-td'),
-                     dragOverCell&&dragOverCell.ri===ri&&dragOverCell.ci===ci?'drag-over':'',
-                     colDraggingIdx===ci?'col-dragging-col':'']"
+            :class="getTdClass(ri,ci,col)"
             :data-ri="ri" :data-ci="ci"
             :draggable="role==='admin' && editMode && col.isClass && !!getCell(ri,ci)"
             @dragstart="onCellDragStart($event,ri,ci)"
@@ -778,13 +778,13 @@ td.col-dragging-col{opacity:0.35;}
      :style="{left:actionMenu.x+'px',top:actionMenu.y+'px'}"
      @click.stop>
   <div class="stu-action-title">{{ maskName(actionMenu.name) }}</div>
-  <button class="stu-action-btn leave" :class="{active-state:actionMenu.currentState==='leave'}" @click="doAction('leave')">
+  <button class="stu-action-btn leave" :class="{'active-state':actionMenu.currentState==='leave'}" @click="doAction('leave')">
     🟢 請假<span v-if="actionMenu.currentState==='leave'" style="margin-left:auto;font-size:0.65rem;">（目前）</span>
   </button>
-  <button class="stu-action-btn present" :class="{active-state:actionMenu.currentState==='present'}" @click="doAction('present')">
+  <button class="stu-action-btn present" :class="{'active-state':actionMenu.currentState==='present'}" @click="doAction('present')">
     🟡 出席<span v-if="actionMenu.currentState==='present'" style="margin-left:auto;font-size:0.65rem;">（目前）</span>
   </button>
-  <button class="stu-action-btn reset" :class="{active-state:actionMenu.currentState==='normal'}" @click="doAction('reset')">
+  <button class="stu-action-btn reset" :class="{'active-state':actionMenu.currentState==='normal'}" @click="doAction('reset')">
     ⬜ 恢復正常<span v-if="actionMenu.currentState==='normal'" style="margin-left:auto;font-size:0.65rem;">（目前）</span>
   </button>
   <button class="stu-action-btn edit" @click="doAction('edit')">
@@ -1151,6 +1151,18 @@ new Vue({
 
   methods:{
     gradeColor, gradeDisplay, hasN,
+
+    // ── class 輔助方法 ──────────────────────────────────────────────────────────
+    getTdClass(ri,ci,col){
+      const classes=[];
+      const cell=this.getCellClass(ri,ci);
+      if(cell) classes.push(cell);
+      if(col.isRemark) classes.push('remark-td');
+      else if(!col.label) classes.push('empty-td');
+      if(this.dragOverCell&&this.dragOverCell.ri===ri&&this.dragOverCell.ci===ci) classes.push('drag-over');
+      if(this.colDraggingIdx===ci) classes.push('col-dragging-col');
+      return classes;
+    },
 
     // ── 姓名遮罩 ──────────────────────────────────────────────────────────────
     maskName(name){

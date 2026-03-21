@@ -269,7 +269,70 @@ td.col-dragging-col{opacity:0.3;}
 /* ★ 暑假警示 */
 .summer-admin-warn{background:#fff3e0;border:1px solid #ffb74d;border-radius:10px;padding:4px 9px;font-size:0.67rem;color:#c2410c;font-weight:600;margin-top:3px;}
 
-/* ★ 備註標記 */
+/* ★ 搜尋列 */
+.search-bar{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.search-input{flex:1;padding:6px 13px;border-radius:28px;border:1.5px solid #e2e8f0;font-size:0.8rem;outline:none;transition:border 0.13s;}
+.search-input:focus{border-color:#4a9eff;}
+.search-clear{background:none;border:none;color:#94a3b8;font-size:1rem;cursor:pointer;padding:0 4px;}
+td.search-match{outline:2px solid #f59e0b;background:#fffbeb !important;z-index:1;position:relative;}
+
+/* ★ 點名模式 */
+.rollcall-overlay{position:fixed;inset:0;background:#f0f3f7;z-index:800;display:flex;flex-direction:column;overflow:hidden;}
+.rollcall-header{background:white;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;}
+.rollcall-title{font-size:0.95rem;font-weight:700;color:#1e2b3a;flex:1;}
+.rollcall-stats{display:flex;gap:8px;font-size:0.72rem;flex-wrap:wrap;}
+.rc-stat{padding:3px 10px;border-radius:20px;font-weight:600;}
+.rc-stat.present{background:#fef9c3;color:#713f12;}
+.rc-stat.leave{background:#dcfce7;color:#14532d;}
+.rc-stat.absent{background:#f1f5f9;color:#475569;}
+.rc-stat.makeup{background:#dbeafe;color:#1d4ed8;}
+.rollcall-close{padding:5px 14px;border-radius:22px;border:1.5px solid #e2e8f0;background:white;font-size:0.78rem;cursor:pointer;font-weight:600;color:#475569;white-space:nowrap;}
+.rollcall-close:hover{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
+
+.rollcall-body{flex:1;overflow-y:auto;padding:10px 12px;}
+.rc-group{margin-bottom:16px;}
+.rc-group-title{font-size:0.78rem;font-weight:700;color:#64748b;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.rc-group-title span{background:#e2e8f0;border-radius:10px;padding:1px 8px;font-size:0.65rem;}
+.rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;}
+
+/* 點名卡片 */
+.rc-card{border-radius:16px;padding:12px 10px;text-align:center;cursor:pointer;transition:all 0.15s;border:2px solid transparent;user-select:none;-webkit-user-select:none;position:relative;}
+.rc-card:active{transform:scale(0.96);}
+/* 狀態 */
+.rc-card.rc-absent{background:white;border-color:#e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.rc-card.rc-present{background:#fef9c3;border-color:#fbbf24;box-shadow:0 2px 8px rgba(251,191,36,0.2);}
+.rc-card.rc-leave{background:#dcfce7;border-color:#86efac;box-shadow:0 2px 8px rgba(134,239,172,0.2);}
+/* 補課卡片 */
+.rc-card.rc-makeup-absent{background:#eff6ff;border-color:#93c5fd;box-shadow:0 2px 8px rgba(147,197,253,0.2);}
+.rc-card.rc-makeup-present{background:#fef08a;border-color:#fbbf24;box-shadow:0 2px 8px rgba(251,191,36,0.25);}
+.rc-card-name{font-size:0.92rem;font-weight:700;color:#1e2b3a;margin-bottom:3px;word-break:break-all;}
+.rc-card-grade{display:inline-flex;align-items:center;border-radius:20px;padding:1px 7px;font-size:0.65rem;font-weight:700;margin-bottom:4px;}
+.rc-card-grade.R{background:#fee2e2;color:#991b1b;}
+.rc-card-grade.R{background:#fee2e2;color:#991b1b;}
+.rc-card-grade.Y{background:#fef9c3;color:#854d0e;}
+.rc-card-grade.B{background:#dbeafe;color:#1e40af;}
+.rc-card-grade.X{background:#e2e8f0;color:#334155;}
+.rc-card-status{font-size:0.68rem;font-weight:600;min-height:18px;}
+.rc-card.rc-absent .rc-card-status{color:#94a3b8;}
+.rc-card.rc-present .rc-card-status{color:#92400e;}
+.rc-card.rc-leave .rc-card-status{color:#14532d;}
+.rc-card.rc-makeup-absent .rc-card-status{color:#1d4ed8;}
+.rc-card.rc-makeup-present .rc-card-status{color:#713f12;}
+.rc-makeup-tag{position:absolute;top:6px;right:6px;background:#3b82f6;color:white;border-radius:8px;padding:0 5px;font-size:0.52rem;font-weight:800;}
+.rc-note-dot{position:absolute;top:6px;left:6px;width:8px;height:8px;background:#f59e0b;border-radius:50%;border:1.5px solid white;}
+
+/* 點名模式切換按鈕 */
+.rollcall-toggle-btn{display:flex;align-items:center;gap:4px;padding:5px 13px;border-radius:22px;border:1.5px solid #e2e8f0;background:white;font-size:0.76rem;cursor:pointer;font-weight:600;color:#475569;transition:0.13s;}
+.rollcall-toggle-btn:hover{background:#f0fdf4;border-color:#86efac;color:#15803d;}
+.rollcall-toggle-btn.active{background:#22c55e;border-color:#22c55e;color:white;}
+
+@media(max-width:480px){
+  .rc-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;}
+  .rc-card{padding:10px 7px;border-radius:13px;}
+  .rc-card-name{font-size:0.82rem;}
+  .rollcall-header{padding:8px 10px;gap:6px;}
+  .rollcall-body{padding:8px 9px;}
+}
 .note-badge{display:inline-flex;align-items:center;background:#fef9c3;color:#854d0e;border-radius:8px;padding:0 4px;font-size:0.55rem;font-weight:700;margin-left:2px;border:1px solid #fcd34d;cursor:help;vertical-align:middle;position:relative;}
 .note-tooltip{display:none;position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:#1e2b3a;color:white;border-radius:8px;padding:4px 8px;font-size:0.66rem;white-space:nowrap;z-index:9999;pointer-events:none;max-width:200px;white-space:normal;text-align:center;min-width:80px;}
 .note-badge:hover .note-tooltip{display:block;}
@@ -387,6 +450,19 @@ td.col-dragging-col{opacity:0.3;}
     {{ editMode?'🔒 關閉拖曳':'✏️ 拖曳學生' }}
   </button>
   <span class="edit-ind" v-if="editMode">拖曳模式</span>
+</div>
+
+<!-- ── 搜尋列 + 點名模式切換 ── -->
+<div class="search-bar">
+  <input type="text" class="search-input" v-model="searchQuery"
+         placeholder="🔍 搜尋學生姓名..."
+         @input="$forceUpdate()">
+  <button v-if="searchQuery" class="search-clear" @click="searchQuery=''" title="清除">✕</button>
+  <button v-if="role==='teacher'||role==='admin'"
+          :class="['rollcall-toggle-btn',rollCallMode?'active':'']"
+          @click="openRollCallMode">
+    {{ rollCallMode?'✓ 點名模式':'👆 點名模式' }}
+  </button>
 </div>
 
 <!-- ── 主表格 ── -->
@@ -581,7 +657,7 @@ td.col-dragging-col{opacity:0.3;}
       <span>{{ maskName(rec.sName) }}（{{ rec.sGrade }}）— {{ rec.dateStr }} {{ getSessionDisplay(rec.sessionCode) }}</span>
       <button v-if="canCancelLeave(rec)" @click="cancelLeave(rec)"
               style="background:#f97316;border:none;border-radius:22px;padding:2px 7px;font-size:0.63rem;cursor:pointer;color:white;">取消</button>
-      <span v-else style="font-size:0.62rem;color:#94a3b8;">課前24h不可取消</span>
+      <span v-else style="font-size:0.62rem;color:#94a3b8;">課前12h不可取消</span>
     </div>
     <div v-if="!leaveRecords.length" style="color:#94a3b8;text-align:center;padding:4px;">尚無請假記錄</div>
   </div>
@@ -1208,6 +1284,80 @@ td.col-dragging-col{opacity:0.3;}
   <button class="stu-action-btn edit" @click="doAction('edit')">✏️ 編輯資料</button>
 </div>
 
+<!-- ★ 點名模式全螢幕 Overlay -->
+<div v-if="rollCallMode" class="rollcall-overlay">
+  <!-- Header -->
+  <div class="rollcall-header">
+    <div class="rollcall-title">
+      👆 點名模式
+      <span style="font-size:0.72rem;font-weight:400;color:#64748b;margin-left:5px;">
+        {{ currentDateStr }} {{ getSessionDisplay(currentSessionCode) }}
+      </span>
+    </div>
+    <!-- 統計 -->
+    <div class="rollcall-stats">
+      <span class="rc-stat present">✅ 出席 {{ rollCallStats.present }}</span>
+      <span class="rc-stat leave">🟢 請假 {{ rollCallStats.leave }}</span>
+      <span class="rc-stat absent">— 未點 {{ rollCallStats.absent }}</span>
+      <span class="rc-stat makeup" v-if="rollCallStats.makeup>0">📋 補課 {{ rollCallStats.makeup }}</span>
+    </div>
+    <button class="rollcall-close" @click="closeRollCallMode">✕ 關閉</button>
+  </div>
+
+  <!-- 操作說明 -->
+  <div style="background:#fffbeb;border-bottom:1px solid #fcd34d;padding:6px 14px;font-size:0.7rem;color:#92400e;display:flex;gap:12px;flex-wrap:wrap;flex-shrink:0;">
+    <span>👆 點一下 → 出席</span>
+    <span>👆👆 再點 → 請假</span>
+    <span>👆👆👆 再點 → 恢復</span>
+    <span style="color:#1d4ed8;">🔵 藍色＝補課，點擊標記出席</span>
+  </div>
+
+  <!-- 卡片區 -->
+  <div class="rollcall-body">
+    <div v-if="!rollCallGroups.length" style="text-align:center;color:#94a3b8;padding:40px;font-size:0.88rem;">
+      此時段尚未有學生資料
+    </div>
+    <div v-for="(group,gi) in rollCallGroups" :key="gi" class="rc-group">
+      <!-- 班級標題 -->
+      <div class="rc-group-title">
+        <span v-if="group.isMakeupGroup" style="color:#1d4ed8;">📋 補課學生</span>
+        <template v-else>
+          <span style="color:#1e2b3a;">{{ group.label }}</span>
+          <span v-if="group.teacher&&group.teacher.name" style="color:#64748b;font-weight:400;font-size:0.68rem;">
+            {{ group.teacher.name }}<span v-if="group.teacher.isSub" style="color:#d97706;">（代）</span>
+          </span>
+        </template>
+        <span>{{ group.students.length }} 人</span>
+      </div>
+      <!-- 學生卡片 -->
+      <div class="rc-grid">
+        <div v-for="stu in group.students" :key="stu.id||stu.name"
+             :class="['rc-card', getRcCardClass(stu)]"
+             @click="onRcCardClick(stu)"
+             @mousedown="startLongPress(stu)"
+             @mouseup="cancelLongPress()"
+             @mouseleave="cancelLongPress()"
+             @touchstart.passive="startLongPress(stu)"
+             @touchend="cancelLongPress()"
+             @touchcancel="cancelLongPress()">
+          <!-- 補課標籤 -->
+          <span v-if="stu.isMakeup" class="rc-makeup-tag">補</span>
+          <!-- 備註點 -->
+          <span v-if="!stu.isMakeup&&stu.note" class="rc-note-dot" :title="stu.note"></span>
+          <!-- 姓名 -->
+          <div class="rc-card-name">{{ maskName(stu.name) }}</div>
+          <!-- 程度 -->
+          <div>
+            <span :class="['rc-card-grade', gradeColor(stu.group)]">{{ gradeDisplay(stu.group) }}</span>
+          </div>
+          <!-- 狀態 -->
+          <div class="rc-card-status">{{ getRcCardStatus(stu) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 拖曳幽靈 -->
 <div v-if="touchDrag.active" class="drag-ghost" :style="{left:touchDrag.x+'px',top:touchDrag.y+'px'}">{{ touchDrag.label }}</div>
 <div v-if="colDragGhost.show" class="col-ghost" :style="{left:colDragGhost.x+'px',top:colDragGhost.y+'px'}">⠿ {{ colDragGhost.label }}</div>
@@ -1301,7 +1451,7 @@ td.col-dragging-col{opacity:0.3;}
 const WD_LABELS=['日','一','二','三','四','五','六'];
 const MONDAY_WD=1;
 const DEFAULT_COL_COUNT=9;
-const LS_KEY='spring_v14_data';
+const LS_KEY='spring_v15_data';
 const MAX_LEVEL=10;
 
 // ── 程度工具 ──────────────────────────────────────────────────────────────────
@@ -1497,6 +1647,10 @@ new Vue({
     newSuspension:{dateStr:'',sessionCode:'',reason:''},
     makeupWeekQuotas:{},
     editMode:false,
+    // ★ 點名模式
+    rollCallMode:false,
+    // ★ 搜尋
+    searchQuery:'',
     cellDragSource:null,
     dragOverCell:null,
     touchDrag:{active:false,startRi:-1,startCi:-1,x:0,y:0,label:'',timer:null},
@@ -1629,6 +1783,63 @@ new Vue({
         this.makeupRecords.filter(r=>r.dateStr===this.currentDateStr&&r.sessionCode===this.currentSessionCode&&r.colIdx===ci&&r.courseId===this.activeCourseId).length);
       return Array.from({length:Math.max(0,...counts)});
     },
+    // ★ 點名模式資料
+    rollCallGroups(){
+      const groups=[];
+      const cols=this.currentCols;
+      // 依班級分組正課學生
+      cols.forEach((col,ci)=>{
+        if(!col.isClass||!col.label) return;
+        const students=this.currentSessionData.allStudents.filter(s=>s.col===ci);
+        if(!students.length) return;
+        groups.push({
+          label:col.label,
+          teacher:this.getEffectiveTeacher(ci),
+          ci,
+          students:students.map(s=>({
+            ...s,
+            isMakeup:false,
+            _stu:s,
+          })),
+        });
+      });
+      // 補課學生獨立一組
+      const makeupRecs=this.makeupRecords.filter(r=>
+        r.dateStr===this.currentDateStr&&
+        r.sessionCode===this.currentSessionCode&&
+        r.courseId===this.activeCourseId
+      );
+      if(makeupRecs.length){
+        groups.push({
+          label:'補課學生',
+          isMakeupGroup:true,
+          ci:-1,
+          students:makeupRecs.map(r=>({
+            name:r.sName,
+            group:r.sGrade,
+            isMakeup:true,
+            present:r.present,
+            leave:false,
+            _rec:r,
+            id:'mu_'+r.id,
+          })),
+        });
+      }
+      return groups;
+    },
+    rollCallStats(){
+      let present=0,leave=0,absent=0,makeup=0;
+      this.rollCallGroups.forEach(g=>{
+        g.students.forEach(s=>{
+          if(s.isMakeup){s.present?makeup++:absent++;}
+          else if(s.present) present++;
+          else if(s.leave) leave++;
+          else absent++;
+        });
+      });
+      return {present,leave,absent,makeup,
+        total:present+leave+absent+makeup};
+    },
     // ★ 時段停課列表
     sessionSuspensionList(){
       const prefix=`${this.activeCourseId}__`;
@@ -1676,6 +1887,11 @@ new Vue({
       else if(!col.label) classes.push('empty-td');
       if(this.dragOverCell&&this.dragOverCell.ri===ri&&this.dragOverCell.ci===ci) classes.push('drag-over');
       if(this.colDraggingIdx===ci) classes.push('col-dragging-col');
+      // ★ 搜尋高亮
+      if(this.searchQuery){
+        const cell=this.getCell(ri,ci);
+        if(cell&&cell.name&&cell.name.includes(this.searchQuery)) classes.push('search-match');
+      }
       return classes;
     },
 
@@ -2255,9 +2471,9 @@ new Vue({
       this.$forceUpdate();
     },
     setPresent(stu,v){stu.present=v;if(v)stu.leave=false;this.addLog('makeup',`${stu.name} 點名${v?'✅':'取消'}`);this.$forceUpdate();},
-    canCancelLeave(rec){const d=this.toDate(rec.dateStr);if(!d) return false;return d.getTime()-Date.now()>24*60*60*1000;},
+    canCancelLeave(rec){const d=this.toDate(rec.dateStr);if(!d) return false;return d.getTime()-Date.now()>12*60*60*1000;},
     cancelLeave(rec){
-      if(!this.canCancelLeave(rec)){alert('課前24小時內不可取消');return;}
+      if(!this.canCancelLeave(rec)){alert('課前12小時內不可取消');return;}
       const sData=this.sessionsData[`${this.activeCourseId}__${makeKey(rec.dateStr,rec.sessionCode)}`];
       if(sData){
         const stu=sData.allStudents.find(s=>s.name===rec.sName&&s.col===rec.colIdx);
@@ -2455,7 +2671,66 @@ new Vue({
       this.saveLS();
     },
 
-    // ── ★ 時段停課 ───────────────────────────────────────────────────────────
+    // ── ★ 點名模式 ───────────────────────────────────────────────────────────
+    openRollCallMode(){
+      this.rollCallMode=true;
+    },
+    closeRollCallMode(){
+      this.rollCallMode=false;
+    },
+    // 點名卡片狀態 class
+    getRcCardClass(stu){
+      if(stu.isMakeup){
+        return stu.present?'rc-makeup-present':'rc-makeup-absent';
+      }
+      if(stu.present) return 'rc-present';
+      if(stu.leave) return 'rc-leave';
+      return 'rc-absent';
+    },
+    // 點名卡片狀態文字
+    getRcCardStatus(stu){
+      if(stu.isMakeup) return stu.present?'✅ 出席':'— 未點名';
+      if(stu.present) return '✅ 出席';
+      if(stu.leave) return '🟢 請假';
+      return '— 未點名';
+    },
+    // 點一下卡片
+    onRcCardClick(stu){
+      if(stu.isMakeup){
+        // 補課：點擊切換出席
+        this.toggleMakeupPresent(stu._rec);
+        return;
+      }
+      const s=stu._stu;
+      if(!s.present&&!s.leave){
+        // 未點名 → 出席
+        this.setPresent(s,true);
+      } else if(s.present){
+        // 出席 → 請假
+        this.setPresent(s,false);
+        this.setLeave(s,true);
+      } else if(s.leave){
+        // 請假 → 未點名（恢復）
+        this.setLeave(s,false);
+      }
+      this.$forceUpdate();
+    },
+    // 長按卡片（恢復到未點名）
+    onRcCardLongPress(stu){
+      if(stu.isMakeup) return;
+      const s=stu._stu;
+      if(s.present) this.setPresent(s,false);
+      if(s.leave) this.setLeave(s,false);
+      if(navigator.vibrate) navigator.vibrate(30);
+      this.$forceUpdate();
+    },
+    // 長按計時器
+    startLongPress(stu){
+      this._lpTimer=setTimeout(()=>this.onRcCardLongPress(stu),600);
+    },
+    cancelLongPress(){
+      clearTimeout(this._lpTimer);
+    },
     isSuspendedSession(dateStr, sessionCode){
       const key=`${this.activeCourseId}__${dateStr}__${sessionCode}`;
       return !!this.sessionSuspensions[key];

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.5">
-<title>補課點名系統 v12</title>
+<title>補課點名系統 v14</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;font-family:'Segoe UI',Roboto,system-ui,sans-serif;}
@@ -269,10 +269,75 @@ td.col-dragging-col{opacity:0.3;}
 /* ★ 暑假警示 */
 .summer-admin-warn{background:#fff3e0;border:1px solid #ffb74d;border-radius:10px;padding:4px 9px;font-size:0.67rem;color:#c2410c;font-weight:600;margin-top:3px;}
 
-@media(max-width:600px){
-  td,th{min-width:74px !important;font-size:0.68rem;}
-  .modal-box,.wizard-box{padding:11px;}
+/* ★ 備註標記 */
+.note-badge{display:inline-flex;align-items:center;background:#fef9c3;color:#854d0e;border-radius:8px;padding:0 4px;font-size:0.55rem;font-weight:700;margin-left:2px;border:1px solid #fcd34d;cursor:help;vertical-align:middle;position:relative;}
+.note-tooltip{display:none;position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:#1e2b3a;color:white;border-radius:8px;padding:4px 8px;font-size:0.66rem;white-space:nowrap;z-index:9999;pointer-events:none;max-width:200px;white-space:normal;text-align:center;min-width:80px;}
+.note-badge:hover .note-tooltip{display:block;}
+
+/* ★ 停課管理分頁 */
+.susp-tabs{display:flex;gap:0;border-radius:12px 12px 0 0;overflow:hidden;border:1px solid #e2e8f0;border-bottom:none;}
+.susp-tab{flex:1;padding:7px 4px;text-align:center;font-size:0.74rem;font-weight:600;cursor:pointer;background:#f8fafd;color:#64748b;border:none;transition:0.13s;}
+.susp-tab.active{background:white;color:#1e2b3a;border-bottom:2px solid white;}
+.susp-tab.holiday.active{color:#7c3aed;}
+.susp-tab.blocked.active{color:#dc2626;}
+.susp-tab.session.active{color:#0369a1;}
+.susp-panel{background:white;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;padding:10px;}
+
+/* 停課清單 */
+.susp-list{margin-top:10px;}
+.susp-item{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:26px;margin-bottom:4px;flex-wrap:wrap;}
+.susp-item.holiday{background:#f5f3ff;}
+.susp-item.blocked{background:#fff5f5;}
+.susp-item.session{background:#eff6ff;}
+.susp-icon{font-size:0.9rem;flex-shrink:0;}
+.susp-info{flex:1;min-width:0;}
+.susp-date{font-size:0.73rem;font-weight:600;}
+.susp-reason{font-size:0.68rem;color:#64748b;}
+.susp-remove{background:none;border:1px solid #e2e8f0;border-radius:14px;padding:1px 8px;font-size:0.63rem;cursor:pointer;color:#64748b;flex-shrink:0;}
+.susp-remove:hover{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
+
+/* 時段停課標記 */
+.sess-btn.suspended{background:#e0f2fe;color:#0369a1;border-color:#93c5fd;}
+.sess-suspended-label{font-size:0.55rem;display:block;color:#0369a1;font-weight:700;margin-top:1px;}
+
+@media(max-width:480px){
+  body{padding:4px;}
+  .app{border-radius:14px;padding:10px;}
+  h1{font-size:1rem;}
+  .role-btn{padding:4px 9px;font-size:0.74rem;}
+  .course-status-bar{padding:5px 9px;gap:5px;}
+  .course-manage-btn{padding:3px 8px;font-size:0.68rem;}
+  .semester-bar{padding:4px 10px;font-size:0.72rem;border-radius:26px;}
+  .col-ctrl-bar{padding:4px 8px;gap:4px;}
+  .table-wrapper{max-height:55vh;border-radius:10px;}
+  td,th{min-width:72px !important;font-size:0.67rem;padding:3px 2px;}
+  .th-class-name{font-size:0.76rem;}
+  .weekday-col{min-width:64px;padding:5px 6px;}
+  .wd-label{font-size:0.62rem;}
+  .sess-btn{font-size:0.65rem;padding:2px 5px;}
+  .card{padding:10px;border-radius:13px;}
+  .btn{padding:4px 10px;font-size:0.74rem;}
+  .quota-grid .qi{flex:1 1 100%;}
+  .wizard-box{border-radius:14px;padding:14px;}
+  .wizard-steps{gap:0;}
+  .ws-circle{width:28px;height:28px;font-size:0.76rem;}
+  .ws-label{font-size:0.55rem;}
+  .modal-box{border-radius:14px;padding:12px;max-height:95vh;}
   .type-cards{grid-template-columns:1fr;}
+  .stu-action-menu{min-width:116px;}
+  .susp-tabs .susp-tab{font-size:0.66rem;padding:6px 2px;}
+}
+
+@media(min-width:481px) and (max-width:900px){
+  .app{padding:12px;}
+  .quota-grid .qi{flex:1 1 45%;}
+  .wizard-box{max-width:92vw;}
+  .modal-box.wide{max-width:96vw;}
+  .makeup-sess-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+}
+
+@media(min-width:901px){
+  .quota-grid .qi{flex:1 1 155px;}
 }
 </style>
 </head>
@@ -281,7 +346,7 @@ td.col-dragging-col{opacity:0.3;}
 
 <!-- ── 頂部 ── -->
 <div class="top-bar">
-  <h1>📋 {{ currentCourse.name || '補課點名系統' }} <small>v12</small></h1>
+  <h1>📋 {{ currentCourse.name || '補課點名系統' }} <small>v14</small></h1>
   <div class="role-bar">
     <button class="role-btn" :class="{active:role==='parent'}"  @click="role='parent'">👪 家長</button>
     <button class="role-btn" :class="{active:role==='teacher'}" @click="role='teacher'">📌 老師</button>
@@ -392,6 +457,10 @@ td.col-dragging-col{opacity:0.3;}
             <span v-else class="gb" :class="gradeColor(getCell(ri,ci).group)">{{ gradeDisplay(getCell(ri,ci).group) }}</span>
             <span v-if="hasN(getCell(ri,ci).group)&&!getCell(ri,ci).pending" class="n-tag">N</span>
             <span v-if="getCell(ri,ci).star" class="star-mark">✦</span>
+            <!-- ★ 備註圖示：後台和老師可見，家長不可見 -->
+            <span v-if="getCell(ri,ci).note && role!=='parent'" class="note-badge">
+              📝<span class="note-tooltip">{{ getCell(ri,ci).note }}</span>
+            </span>
           </template>
           <div v-else-if="role==='admin'&&editMode&&col.isClass"
                style="color:#e2e8f0;font-size:0.67rem;cursor:pointer;" @click.stop="addStudentAt(ri,ci)">＋</div>
@@ -493,9 +562,11 @@ td.col-dragging-col{opacity:0.3;}
         <div :class="['sess-btn',
                currentDateStr===wd.dateStr&&currentSessionCode===sess.code?'active':'',
                (wd.isHoliday||wd.isBlocked)?'locked':'',
+               isSuspendedSession(wd.dateStr,sess.code)?'suspended':'',
                isSummerPeriodDate(wd.dateStr)&&![0,6].includes(wd.num)&&role!=='admin'?'summer-locked':'']"
              @click="!(wd.isHoliday||wd.isBlocked)&&selectDateSession(wd.dateStr,wd.num,sess.code)">
           {{ sess.code }} {{ sess.time }}
+          <span v-if="isSuspendedSession(wd.dateStr,sess.code)" class="sess-suspended-label">本節停課</span>
         </div>
       </div>
     </div>
@@ -621,62 +692,114 @@ td.col-dragging-col{opacity:0.3;}
     <button class="btn gray" style="margin-top:4px;padding:2px 9px;font-size:0.67rem;" @click="opLog=[]">清除</button>
   </div>
 
-  <!-- ★ 停課 / 休假 / 封鎖週設定 -->
+  <!-- ★ 停課管理（整合：國定假日 / 封鎖整週 / 時段停課） -->
   <div class="card">
-    <div class="card-title">🗓️ 停課 / 休假 / 封鎖週</div>
+    <div class="card-title">🚫 停課管理</div>
 
-    <!-- 新增停課日 -->
-    <div style="font-size:0.8rem;font-weight:600;color:#1e2b3a;margin-bottom:6px;">🚫 新增停課日（國定假日）</div>
-    <div class="flex" style="flex-wrap:wrap;gap:7px;margin-bottom:8px;background:#f8fafd;padding:8px;border-radius:11px;border:1px solid #e2e8f0;">
-      <input type="date" v-model="newHoliday.dateStr"
-             style="padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.78rem;">
-      <input type="text" v-model="newHoliday.reason" placeholder="說明（如：元旦、春節）"
-             style="flex:1;min-width:120px;padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.78rem;">
-      <button class="btn purple" style="margin-top:0;" @click="addHoliday">＋ 新增</button>
+    <!-- 分頁選擇 -->
+    <div class="susp-tabs">
+      <button :class="['susp-tab','holiday',suspensionTab==='holiday'?'active':'']"
+              @click="suspensionTab='holiday'">🚫 國定假日</button>
+      <button :class="['susp-tab','blocked',suspensionTab==='blocked'?'active':'']"
+              @click="suspensionTab='blocked'">🔒 封鎖整週</button>
+      <button :class="['susp-tab','session',suspensionTab==='session'?'active':'']"
+              @click="suspensionTab='session'">⏸️ 時段停課</button>
     </div>
 
-    <!-- 已設定停課日清單 -->
-    <div v-if="holidays.length" style="margin-bottom:12px;">
-      <div v-for="(h,hi) in holidays" :key="'h'+hi"
-           class="flex" style="margin-bottom:4px;background:#f5f3ff;padding:4px 10px;border-radius:26px;">
-        <span style="font-size:0.73rem;color:#6d28d9;font-weight:600;">🚫 {{ h.dateStr }}</span>
-        <input v-model="h.reason"
-               style="padding:2px 7px;border-radius:22px;border:1px solid #c4b5fd;font-size:0.72rem;flex:1;margin:0 6px;"
-               placeholder="說明">
-        <button @click="holidays.splice(hi,1);saveLS()"
-                style="background:#8b5cf6;color:white;border:none;border-radius:22px;padding:2px 8px;font-size:0.66rem;cursor:pointer;">移除</button>
+    <!-- 國定假日 -->
+    <div v-if="suspensionTab==='holiday'" class="susp-panel">
+      <div style="font-size:0.72rem;color:#64748b;margin-bottom:8px;">設定整天停課（元旦、春節、颱風假等）</div>
+      <div class="flex" style="flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+        <input type="date" v-model="newHoliday.dateStr"
+               style="padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.76rem;flex:1;min-width:130px;">
+        <input type="text" v-model="newHoliday.reason" placeholder="說明（如：元旦）"
+               style="flex:2;min-width:100px;padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.76rem;">
+        <button class="btn purple" style="margin-top:0;" @click="addHoliday">＋ 新增</button>
       </div>
     </div>
-    <div v-else style="font-size:0.72rem;color:#94a3b8;margin-bottom:12px;">尚未設定任何停課日</div>
 
-    <!-- 新增封鎖週 -->
-    <div style="font-size:0.8rem;font-weight:600;color:#1e2b3a;margin-bottom:6px;">🔒 封鎖週（整週停課）</div>
-    <div class="flex" style="flex-wrap:wrap;gap:7px;margin-bottom:8px;background:#f8fafd;padding:8px;border-radius:11px;border:1px solid #e2e8f0;">
-      <select v-model="newBlockedWeek.weekIdx"
-              style="padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.78rem;flex:1;min-width:120px;">
-        <option value="-1" disabled>選擇週次</option>
-        <option v-for="(wk,wi) in weekGroups" :key="wi" :value="wi">
-          第{{ wi+1 }}週（{{ wk.label }}）
-        </option>
-      </select>
-      <input type="text" v-model="newBlockedWeek.reason" placeholder="說明（如：期中考週）"
-             style="flex:1;min-width:120px;padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.78rem;">
-      <button class="btn red" style="margin-top:0;" @click="addBlockedWeek">🔒 封鎖</button>
-    </div>
-
-    <!-- 已封鎖週清單 -->
-    <div v-if="blockedWeeks.length">
-      <div v-for="(bw,bi) in blockedWeeks" :key="'bw'+bi"
-           class="flex" style="margin-bottom:4px;background:#fff5f5;padding:4px 10px;border-radius:26px;">
-        <span style="font-size:0.73rem;color:#dc2626;font-weight:600;">🔒 第{{ bw.weekIdx+1 }}週</span>
-        <input v-model="bw.reason"
-               style="padding:2px 7px;border-radius:22px;border:1px solid #fca5a5;font-size:0.72rem;flex:1;margin:0 6px;"
-               placeholder="說明">
-        <button @click="blockedWeeks.splice(bi,1);saveLS()"
-                style="background:#ff6b6b;color:white;border:none;border-radius:22px;padding:2px 8px;font-size:0.66rem;cursor:pointer;">移除</button>
+    <!-- 封鎖整週 -->
+    <div v-if="suspensionTab==='blocked'" class="susp-panel">
+      <div style="font-size:0.72rem;color:#64748b;margin-bottom:8px;">設定整週停課（期中考週、颱風週等）</div>
+      <div class="flex" style="flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+        <select v-model="newBlockedWeek.weekIdx"
+                style="padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.76rem;flex:2;min-width:140px;">
+          <option value="-1" disabled>選擇週次</option>
+          <option v-for="(wk,wi) in weekGroups" :key="wi" :value="wi">
+            第{{ wi+1 }}週（{{ wk.label }}）
+          </option>
+        </select>
+        <input type="text" v-model="newBlockedWeek.reason" placeholder="說明（如：期中考週）"
+               style="flex:2;min-width:100px;padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.76rem;">
+        <button class="btn red" style="margin-top:0;" @click="addBlockedWeek">🔒 封鎖</button>
       </div>
     </div>
-    <div v-else style="font-size:0.72rem;color:#94a3b8;">尚未設定任何封鎖週</div>
+
+    <!-- 時段停課 -->
+    <div v-if="suspensionTab==='session'" class="susp-panel">
+      <div style="font-size:0.72rem;color:#64748b;margin-bottom:8px;">設定特定日期的特定時段停課（如：人數過少、老師臨時有事）</div>
+      <div class="flex" style="flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+        <input type="date" v-model="newSuspension.dateStr" @change="newSuspension.sessionCode=''"
+               style="padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.76rem;flex:1;min-width:130px;">
+        <select v-model="newSuspension.sessionCode"
+                style="padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.76rem;flex:1;min-width:100px;">
+          <option value="" disabled>選擇時段</option>
+          <option v-for="sess in activeSessions" :key="sess.code" :value="sess.code">
+            {{ sess.code }} {{ sess.time }}
+          </option>
+        </select>
+        <input type="text" v-model="newSuspension.reason" placeholder="原因（如：人數過少）"
+               style="flex:2;min-width:100px;padding:4px 9px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.76rem;">
+        <button class="btn blue" style="margin-top:0;" @click="addSessionSuspension">⏸️ 設定停課</button>
+      </div>
+    </div>
+
+    <!-- 整合清單（三種全部依類型分組顯示） -->
+    <div class="susp-list">
+      <div v-if="!allSuspensions.length" style="font-size:0.72rem;color:#94a3b8;text-align:center;padding:10px 0;">
+        尚未設定任何停課
+      </div>
+      <template v-else>
+        <!-- 國定假日 -->
+        <div v-if="holidays.length" style="margin-bottom:8px;">
+          <div style="font-size:0.68rem;font-weight:700;color:#7c3aed;margin-bottom:4px;">🚫 國定假日</div>
+          <div v-for="(h,hi) in holidays" :key="'h'+hi" class="susp-item holiday">
+            <span class="susp-icon">🚫</span>
+            <div class="susp-info">
+              <span class="susp-date" style="color:#6d28d9;">{{ h.dateStr }}</span>
+              <input v-model="h.reason" @change="saveLS()"
+                     style="padding:1px 7px;border-radius:18px;border:1px solid #c4b5fd;font-size:0.7rem;margin-left:6px;width:120px;" placeholder="說明">
+            </div>
+            <button class="susp-remove" @click="holidays.splice(hi,1);saveLS()">移除</button>
+          </div>
+        </div>
+        <!-- 封鎖週 -->
+        <div v-if="blockedWeeks.length" style="margin-bottom:8px;">
+          <div style="font-size:0.68rem;font-weight:700;color:#dc2626;margin-bottom:4px;">🔒 封鎖整週</div>
+          <div v-for="(bw,bi) in blockedWeeks" :key="'bw'+bi" class="susp-item blocked">
+            <span class="susp-icon">🔒</span>
+            <div class="susp-info">
+              <span class="susp-date" style="color:#dc2626;">第{{ bw.weekIdx+1 }}週</span>
+              <input v-model="bw.reason" @change="saveLS()"
+                     style="padding:1px 7px;border-radius:18px;border:1px solid #fca5a5;font-size:0.7rem;margin-left:6px;width:120px;" placeholder="說明">
+            </div>
+            <button class="susp-remove" @click="blockedWeeks.splice(bi,1);saveLS()">移除</button>
+          </div>
+        </div>
+        <!-- 時段停課 -->
+        <div v-if="sessionSuspensionList.length">
+          <div style="font-size:0.68rem;font-weight:700;color:#0369a1;margin-bottom:4px;">⏸️ 時段停課</div>
+          <div v-for="(ss,si) in sessionSuspensionList" :key="'ss'+si" class="susp-item session">
+            <span class="susp-icon">⏸️</span>
+            <div class="susp-info">
+              <span class="susp-date" style="color:#0369a1;">{{ ss.dateStr }} {{ ss.sessionCode }}</span>
+              <span class="susp-reason">{{ ss.reason }}</span>
+            </div>
+            <button class="susp-remove" @click="removeSessionSuspension(ss.key)">移除</button>
+          </div>
+        </div>
+      </template>
+    </div>
   </div>
 
 </template>
@@ -972,15 +1095,24 @@ td.col-dragging-col{opacity:0.3;}
 
 <!-- 學生編輯 Modal -->
 <div class="modal-mask" v-if="stuEditModal.show" @click.self="stuEditModal.show=false">
-  <div class="modal-box" style="max-width:350px;">
+  <div class="modal-box" style="max-width:380px;">
     <div class="modal-title">✏️ 編輯學生資料</div>
     <div style="margin-bottom:8px;">
       <label style="font-size:0.76rem;display:block;margin-bottom:2px;">姓名</label>
       <input v-model="stuEditModal.name" style="width:100%;padding:5px 11px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.82rem;" @keyup.enter="confirmStuEdit">
     </div>
-    <div style="margin-bottom:10px;">
+    <div style="margin-bottom:8px;">
       <label style="font-size:0.76rem;display:block;margin-bottom:2px;">程度（加 * 表示補考中）</label>
       <input v-model="stuEditModal.grade" placeholder="如：3Y 或 4B*" style="width:100%;padding:5px 11px;border-radius:22px;border:1px solid #e2e8f0;font-size:0.82rem;" @keyup.enter="confirmStuEdit">
+    </div>
+    <!-- ★ 備註欄位：後台專用，老師可見，家長不可見 -->
+    <div style="margin-bottom:10px;">
+      <label style="font-size:0.76rem;display:block;margin-bottom:2px;">
+        📝 備註
+        <span style="font-size:0.64rem;color:#64748b;font-weight:400;">（老師可見，家長不可見）</span>
+      </label>
+      <textarea v-model="stuEditModal.note" placeholder="如：需要補考、請假原因、特殊說明..."
+                style="width:100%;padding:6px 11px;border-radius:14px;border:1px solid #e2e8f0;font-size:0.78rem;resize:vertical;min-height:60px;font-family:inherit;"></textarea>
     </div>
     <div class="flex">
       <button class="btn green" @click="confirmStuEdit">✅ 儲存</button>
@@ -1169,7 +1301,7 @@ td.col-dragging-col{opacity:0.3;}
 const WD_LABELS=['日','一','二','三','四','五','六'];
 const MONDAY_WD=1;
 const DEFAULT_COL_COUNT=9;
-const LS_KEY='spring_v13_data';
+const LS_KEY='spring_v14_data';
 const MAX_LEVEL=10;
 
 // ── 程度工具 ──────────────────────────────────────────────────────────────────
@@ -1358,6 +1490,11 @@ new Vue({
     holidays:[],
     newHoliday:{dateStr:'',reason:''},
     newBlockedWeek:{weekIdx:-1,reason:''},
+    // ★ 時段停課 key: "courseId__dateStr__sessionCode" → reason
+    sessionSuspensions:{},
+    // 停課管理 UI 狀態
+    suspensionTab:'holiday',
+    newSuspension:{dateStr:'',sessionCode:'',reason:''},
     makeupWeekQuotas:{},
     editMode:false,
     cellDragSource:null,
@@ -1375,7 +1512,7 @@ new Vue({
       makeupEnabled:false,makeupQuota:5,addGradeInput:'',conflictGrades:[],autoPreview:[],
     },
     gradeUpdateModal:{show:false,ri:-1,ci:-1,name:'',currentGrade:'',newGrade:''},
-    stuEditModal:{show:false,ri:-1,ci:-1,name:'',grade:''},
+    stuEditModal:{show:false,ri:-1,ci:-1,name:'',grade:'',note:''},
     makeupModal:{show:false},
     historyModal:{show:false,fromDate:'',toDate:'',typeFilter:'',nameFilter:''},
     actionMenu:{show:false,ri:-1,ci:-1,name:'',x:0,y:0,currentState:'normal'},
@@ -1492,6 +1629,21 @@ new Vue({
         this.makeupRecords.filter(r=>r.dateStr===this.currentDateStr&&r.sessionCode===this.currentSessionCode&&r.colIdx===ci&&r.courseId===this.activeCourseId).length);
       return Array.from({length:Math.max(0,...counts)});
     },
+    // ★ 時段停課列表
+    sessionSuspensionList(){
+      const prefix=`${this.activeCourseId}__`;
+      return Object.entries(this.sessionSuspensions)
+        .filter(([k])=>k.startsWith(prefix))
+        .map(([k,reason])=>{
+          const rest=k.slice(prefix.length);
+          const parts=rest.split('__');
+          return {key:k,dateStr:parts[0],sessionCode:parts[1],reason};
+        })
+        .sort((a,b)=>a.dateStr.localeCompare(b.dateStr));
+    },
+    allSuspensions(){
+      return this.holidays.length||this.blockedWeeks.length||this.sessionSuspensionList.length;
+    },
   },
 
   watch:{
@@ -1560,6 +1712,7 @@ new Vue({
           semesterConfig:this.semesterConfig,startDateInput:this.startDateInput,
           weeksCount:this.weeksCount,holidays:this.holidays,blockedWeeks:this.blockedWeeks,
           makeupWeekQuotas:this.makeupWeekQuotas,unassignedStudents:this.unassignedStudents,
+          sessionSuspensions:this.sessionSuspensions,
         }));
       }catch(e){console.warn('LS save:',e.message);}
     },
@@ -1585,6 +1738,7 @@ new Vue({
         if(d.blockedWeeks) this.blockedWeeks=d.blockedWeeks;
         if(d.makeupWeekQuotas) this.makeupWeekQuotas=d.makeupWeekQuotas;
         if(d.unassignedStudents) this.unassignedStudents=d.unassignedStudents;
+        if(d.sessionSuspensions) this.sessionSuspensions=d.sessionSuspensions;
         return true;
       }catch(e){console.warn('LS load:',e.message);return false;}
     },
@@ -2053,15 +2207,18 @@ new Vue({
       this.setLeave(stu,true);
     },
     openStuEdit(ri,ci,cell){
-      this.stuEditModal={show:true,ri,ci,name:cell.name,grade:cell.group+(cell.pending?'*':'')};
+      this.stuEditModal={show:true,ri,ci,name:cell.name,grade:cell.group+(cell.pending?'*':''),note:cell.note||''};
     },
     confirmStuEdit(){
-      const{ri,ci,name,grade}=this.stuEditModal; if(!name.trim()){alert('姓名不可為空');return;}
+      const{ri,ci,name,grade,note}=this.stuEditModal; if(!name.trim()){alert('姓名不可為空');return;}
       const{grade:g,pending}=parseGradeRepeat(grade);
       const cell=this.currentSessionData.rows[ri][ci];
-      if(cell){cell.name=name.trim();cell.group=g;cell.pending=pending;
+      if(cell){
+        cell.name=name.trim();cell.group=g;cell.pending=pending;
+        cell.note=note.trim();
         this.currentSessionData.allStudents=buildStudents(this.currentSessionData.rows,this.currentSessionData.cols);
-        this.addLog('grade',`編輯學生：${name.trim()} ${g}`);}
+        this.addLog('grade',`編輯學生：${name.trim()} ${g}${note?' [備註]':''}`);
+      }
       this.stuEditModal.show=false;this.$forceUpdate();
     },
     deleteStu(){
@@ -2295,6 +2452,27 @@ new Vue({
       this.blockedWeeks.push({weekIdx:this.newBlockedWeek.weekIdx,reason:this.newBlockedWeek.reason||'封鎖週'});
       this.addLog('setting',`封鎖第${this.newBlockedWeek.weekIdx+1}週`);
       this.newBlockedWeek={weekIdx:-1,reason:''};
+      this.saveLS();
+    },
+
+    // ── ★ 時段停課 ───────────────────────────────────────────────────────────
+    isSuspendedSession(dateStr, sessionCode){
+      const key=`${this.activeCourseId}__${dateStr}__${sessionCode}`;
+      return !!this.sessionSuspensions[key];
+    },
+    addSessionSuspension(){
+      const{dateStr,sessionCode,reason}=this.newSuspension;
+      if(!dateStr){alert('請選擇日期');return;}
+      if(!sessionCode){alert('請選擇時段');return;}
+      const key=`${this.activeCourseId}__${dateStr}__${sessionCode}`;
+      if(this.sessionSuspensions[key]){alert('此時段已設定停課');return;}
+      this.$set(this.sessionSuspensions,key,reason.trim()||'停課');
+      this.addLog('setting',`時段停課：${dateStr} ${sessionCode}（${reason||'停課'}）`);
+      this.newSuspension={dateStr:'',sessionCode:'',reason:''};
+      this.saveLS();
+    },
+    removeSessionSuspension(key){
+      this.$delete(this.sessionSuspensions,key);
       this.saveLS();
     },
 

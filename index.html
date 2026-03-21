@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
-<title>春季班 請假補課系統 v10</title>
+<title>補習班 點名補課系統 v11</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;font-family:'Segoe UI',Roboto,system-ui,sans-serif;}
@@ -43,7 +43,8 @@ h1 small{font-size:0.75rem;color:#4a6a85;}
 .sess-btn{padding:3px 8px;border-radius:30px;background:#edf2f7;border:1px solid #cbd5e1;cursor:pointer;font-size:0.72rem;font-weight:500;text-align:center;white-space:nowrap;display:block;margin-bottom:2px;user-select:none;}
 .sess-btn.active{background:#4a9eff;color:white;border-color:#4a9eff;}
 .sess-btn.locked{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
-.sess-btn:hover:not(.active):not(.locked){background:#dde3ed;}
+.sess-btn.summer-locked{background:#fff3e0;color:#bf360c;cursor:not-allowed;}
+.sess-btn:hover:not(.active):not(.locked):not(.summer-locked){background:#dde3ed;}
 
 /* 表格 */
 .table-wrapper{overflow-x:auto;overflow-y:auto;border-radius:16px;border:1px solid #dde3ed;margin-bottom:6px;max-height:65vh;}
@@ -217,14 +218,77 @@ td.col-dragging-col{opacity:0.35;}
 .makeup-sess-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px;}
 .makeup-sess-card{background:white;border-radius:14px;padding:12px;border:1px solid #e9eef3;}
 
-/* 老師名稱顯示 */
-.th-teacher{font-size:0.6rem;color:#4a6a85;margin-top:1px;font-weight:500;}
-.th-teacher.sub{color:#f59e0b;font-weight:700;}
-.sub-teacher-badge{display:inline-block;background:#fef3c7;color:#92400e;border-radius:10px;padding:0 4px;font-size:0.55rem;font-weight:700;margin-left:2px;border:1px solid #fcd34d;}
+/* 老師名稱顯示 - 重新設計 */
+.th-wrap{display:flex;flex-direction:column;align-items:stretch;width:100%;}
+.th-top-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 6px 2px;gap:3px;}
+.th-class-name{font-size:0.85rem;font-weight:800;color:#1e2b3a;text-align:center;}
+.th-teacher-name{font-size:0.65rem;font-weight:600;color:#4a6a85;text-align:center;margin-top:1px;line-height:1.3;}
+.th-teacher-name.is-sub{color:#d97706;font-weight:700;}
+.sub-badge{display:inline-block;background:#fef3c7;color:#92400e;border-radius:7px;padding:0 4px;font-size:0.52rem;font-weight:800;border:1px solid #fcd34d;margin-left:2px;vertical-align:middle;}
+.th-grades{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:2px;}
+.th-drag-handle{cursor:grab;color:#94a3b8;font-size:0.85rem;padding:0 2px;user-select:none;flex-shrink:0;line-height:1;}
+.th-drag-handle:active{cursor:grabbing;}
+.th-over-badge{background:#fee2e2;color:#dc2626;border-radius:10px;padding:0 5px;font-size:0.58rem;font-weight:700;flex-shrink:0;}
+.th-teacher-row{padding:2px 6px 2px;text-align:center;font-size:0.68rem;font-weight:600;color:#4a6a85;min-height:18px;border-top:1px solid #eef1f5;}
+.th-teacher-row.has-sub{color:#d97706;font-weight:700;}
+.th-sub-badge{display:inline-block;background:#fef3c7;color:#92400e;border-radius:8px;padding:0 4px;font-size:0.55rem;font-weight:700;margin-left:2px;border:1px solid #fcd34d;}
+.th-grades-row{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;padding:3px 4px 4px;min-height:20px;border-top:1px solid #eef1f5;}
+.th-grade-chip{display:inline-flex;align-items:center;border-radius:20px;padding:0 5px;font-size:0.57rem;font-weight:700;line-height:1.7;}
+.th-grade-chip.R{background:#fcc;color:#a33;}
+.th-grade-chip.Y{background:#ffd966;color:#8a6d2b;}
+.th-grade-chip.B{background:#bdd7ff;color:#1e3a5f;}
+.th-grade-chip.X{background:#e5e7eb;color:#374151;}
+.th-hint-row{font-size:0.52rem;color:#4a9eff;text-align:center;padding:2px 4px 3px;display:none;border-top:1px solid #eef1f5;}
+th.admin-th:hover .th-hint-row{display:block;}
 
 /* 代課老師設定區 */
 .sub-teacher-section{background:#fef9c3;border-radius:14px;padding:10px 12px;margin-bottom:10px;border:1px dashed #fcd34d;}
 .sub-teacher-label{font-size:0.78rem;font-weight:600;color:#92400e;margin-bottom:6px;}
+
+/* 課程切換列 */
+.course-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 12px;background:#f8fafd;border-radius:40px;border:1px solid #dde3ed;}
+.course-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 14px;border-radius:40px;border:1px solid #cbd5e1;cursor:pointer;font-size:0.78rem;font-weight:600;color:#4a5b6e;transition:0.12s;background:white;}
+.course-chip.active{background:#1e2b3a;color:white;border-color:#1e2b3a;}
+.course-chip.short-type{border-color:#f59e0b;}
+.course-chip.short-type.active{background:#f59e0b;border-color:#f59e0b;}
+.course-chip:hover:not(.active){background:#edf2f7;}
+.course-type-badge{font-size:0.58rem;padding:1px 5px;border-radius:10px;font-weight:700;vertical-align:middle;}
+.course-type-badge.semester{background:#dbeafe;color:#1d4ed8;}
+.course-type-badge.short{background:#fef3c7;color:#92400e;}
+
+/* 短期課程導航 */
+.shortterm-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+.date-chip{padding:4px 12px;border-radius:30px;background:#fff7ed;border:1px solid #fdba74;cursor:pointer;font-size:0.74rem;font-weight:600;color:#92400e;user-select:none;}
+.date-chip.active{background:#f97316;color:white;border-color:#f97316;}
+.date-chip.is-holiday{background:#f5f3ff;border-color:#c4b5fd;color:#6d28d9;}
+.date-chip:hover:not(.active):not(.is-holiday){background:#fed7aa;}
+.semester-bar.shortterm{background:#fff7ed;border-color:#fdba74;}
+.sem-badge.shortterm{background:#f97316;color:white;}
+
+/* 補課封鎖提示 */
+.makeup-blocked{background:#fef3c7;color:#92400e;border-radius:18px;padding:1px 6px;font-size:0.6rem;font-weight:600;}
+
+/* 時段管理 */
+.sess-mgr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:10px;}
+.sess-card{background:white;border-radius:12px;padding:10px 12px;border:1px solid #e9eef3;}
+.sess-card.disabled{opacity:0.5;background:#f9fafb;}
+.sess-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:4px;}
+.sess-code-label{font-size:0.88rem;font-weight:700;color:#1e2b3a;}
+.sess-time-label{font-size:0.72rem;color:#4a6a85;}
+.sess-day-label{font-size:0.65rem;color:#6b7280;margin-top:3px;}
+.sess-alias{font-size:0.62rem;color:#6b7280;background:#f3f4f6;border-radius:8px;padding:1px 5px;display:inline-block;margin-top:2px;}
+.sess-toggle{padding:2px 8px;border-radius:20px;border:none;cursor:pointer;font-size:0.65rem;font-weight:700;transition:0.12s;flex-shrink:0;}
+.sess-toggle.on{background:#dcfce7;color:#15803d;}
+.sess-toggle.off{background:#fee2e2;color:#dc2626;}
+.new-sess-form{background:#f0fdf4;border-radius:14px;padding:12px;border:1px dashed #86efac;margin-top:10px;}
+
+/* 課程管理 Modal */
+.course-card{background:white;border-radius:14px;padding:12px;border:1px solid #e9eef3;margin-bottom:8px;}
+.course-card.active-course{border-color:#4a9eff;background:#f0f6ff;}
+.course-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.course-card-title{font-size:0.92rem;font-weight:700;color:#1e2b3a;}
+
+@media(max-width:600px){
   td,th{min-width:76px !important;font-size:0.7rem;}
   .modal-box{padding:12px;}
   .stu-action-menu{min-width:110px;}
@@ -236,7 +300,7 @@ td.col-dragging-col{opacity:0.35;}
 
 <!-- 頂部 -->
 <div class="top-bar">
-  <h1>📋 春季班 <small>請假補課點名系統 v10</small></h1>
+  <h1>📋 補習班 <small>點名補課請假系統 v11</small></h1>
   <div class="role-bar">
     <button class="role-btn" :class="{active:role==='parent'}"  @click="role='parent'">👪 家長</button>
     <button class="role-btn" :class="{active:role==='teacher'}" @click="role='teacher'">📌 老師</button>
@@ -244,14 +308,33 @@ td.col-dragging-col{opacity:0.35;}
   </div>
 </div>
 
+<!-- 課程切換列 -->
+<div class="course-bar">
+  <span style="font-size:0.72rem;font-weight:700;color:#3730a3;background:#e0e7ff;border-radius:16px;padding:2px 9px;">
+    {{ currentCourse.name || '未選擇課程' }}
+  </span>
+  <span :class="['course-type-badge', currentCourse.type==='short'?'short':'semester']">
+    {{ currentCourse.type==='short'?'短期課程':'學期課程' }}
+  </span>
+  <span style="font-size:0.7rem;color:#4a6a85;">{{ currentCourse.dateRange || '' }}</span>
+  <button class="course-switch-btn" @click="courseModal.show=true">
+    {{ role==='admin'?'⚙️ 管理課程':'切換課程' }}
+  </button>
+</div>
+
 <!-- 學期狀態條 -->
 <div class="semester-bar" :class="semesterBarClass">
   <span class="sem-badge" :class="semesterBadgeClass">{{ semesterStatusLabel }}</span>
-  <span v-if="semesterConfig.name">{{ semesterConfig.name }}</span>
-  <span v-if="currentDateStr" style="font-weight:600;">{{ currentDateStr }}（週{{ WD_LABELS[currentWeekdayNum] }}）{{ getSessionDisplay(currentSessionCode) }}</span>
+  <span style="font-weight:600;color:#1e2b3a;">{{ currentCourse.name }}</span>
+  <span v-if="currentDateStr" style="font-weight:600;">
+    {{ currentDateStr }}
+    <span v-if="currentCourse.type==='semester'">（週{{ WD_LABELS[currentWeekdayNum] }}）</span>
+    {{ getSessionDisplay(currentSessionCode) }}
+  </span>
   <span v-if="currentDayStatus==='holiday'" style="color:#6d28d9;font-weight:600;">🚫 {{ getHolidayReason(currentDateStr) }}</span>
   <span v-if="currentDayStatus==='blocked'" style="color:#dc2626;font-weight:600;">🔒 {{ getBlockedReason(currentWeekIdx) }}</span>
   <span v-if="isMakeupWeek" style="color:#b45309;font-weight:600;">📚 補課週</span>
+  <span v-if="isSummerPeriod && isSummerWeekday" style="color:#bf360c;font-weight:600;">☀️ 暑期：僅六日可補課</span>
 </div>
 
 <!-- 欄位控制列（後台） -->
@@ -289,20 +372,24 @@ td.col-dragging-col{opacity:0.35;}
             @dragend="colDraggingIdx=-1;colDragOver=-1"
             @click="role==='admin' && !col.isRemark && onHeaderClick(ci)">
           <div class="th-inner">
-            <div class="th-top">
-              <span v-if="role==='admin'" class="col-drag-handle" @click.stop title="拖曳調整欄位順序">⠿</span>
-              <span>{{ col.label || (role==='admin'?'（未命名）':'') }}</span>
+            <div style="display:flex;align-items:center;gap:2px;justify-content:center;flex-wrap:wrap;">
+              <span v-if="role==='admin'" class="col-drag-handle" @click.stop>⠿</span>
+              <span class="th-class-name">{{ col.label || (role==='admin'?'（未命名）':'') }}</span>
               <span v-if="col.isClass && getOverCount(ci)>0" class="warn-badge">超額{{ getOverCount(ci) }}</span>
             </div>
-            <!-- 老師名稱（固定或代課） -->
-            <div v-if="col.isClass" :class="['th-teacher', getEffectiveTeacher(ci).isSub?'sub':'']">
+            <!-- ★ 老師：第二行 -->
+            <div v-if="col.isClass"
+                 :class="['th-teacher-name', getEffectiveTeacher(ci).isSub?'is-sub':'']">
               <span v-if="getEffectiveTeacher(ci).name">
                 {{ getEffectiveTeacher(ci).name }}
-                <span v-if="getEffectiveTeacher(ci).isSub" class="sub-teacher-badge">代</span>
+                <span v-if="getEffectiveTeacher(ci).isSub" class="sub-badge">代</span>
               </span>
+              <span v-else style="color:#d1d5db;font-size:0.58rem;">未設定老師</span>
             </div>
-            <div class="th-sub" v-if="col.isClass && col.grades && col.grades.length">
-              {{ col.grades.slice(0,4).join(' ') }}{{ col.grades.length>4?'…':'' }}
+            <!-- ★ 程度：第三行 -->
+            <div v-if="col.isClass && col.grades && col.grades.length" class="th-grades">
+              <span v-for="g in col.grades.slice(0,5)" :key="g" class="th-grade-chip">{{ g }}</span>
+              <span v-if="col.grades.length>5" class="th-grade-chip">+{{ col.grades.length-5 }}</span>
             </div>
             <span v-if="role==='admin' && col.isClass" class="th-hint">✏️ 點擊設定</span>
           </div>
@@ -448,9 +535,9 @@ td.col-dragging-col{opacity:0.35;}
       </div>
       <div v-for="sess in wd.sessions" :key="sess.code">
         <div class="sess-btn"
-             :class="{'active':currentDateStr===wd.dateStr&&currentSessionCode===sess.code,'locked':wd.isHoliday||wd.isBlocked||!isSessionUnlocked(wd.dateStr,wd.num)}"
+             :class="{'active':currentDateStr===wd.dateStr&&currentSessionCode===sess.code,'locked':wd.isHoliday||wd.isBlocked||!isSessionUnlocked(wd.dateStr,wd.num),'summer-locked':isSummerPeriodDate(wd.dateStr)&&![0,6].includes(wd.num)}"
              @click="!(wd.isHoliday||wd.isBlocked)&&selectDateSession(wd.dateStr,wd.num,sess.code)">
-          {{ sess.code.replace('春','') }} {{ sess.desc }}
+          {{ sess.code }} {{ sess.time||sess.desc||'' }}
         </div>
       </div>
     </div>
@@ -571,6 +658,60 @@ td.col-dragging-col{opacity:0.35;}
         <input type="number" min="1" max="24" v-model.number="weeksCount" style="width:52px;padding:4px;border-radius:28px;border:1px solid #bdc9d9;text-align:center;font-size:0.8rem;"></div>
       <button class="btn blue" style="margin-top:0;align-self:flex-end;" @click="generateDates">📅 產生日期</button>
     </div>
+    <!-- ★ 時段管理 -->
+    <div style="font-weight:600;font-size:0.84rem;margin:10px 0 6px;">🕐 時段管理</div>
+    <div class="info" style="margin-bottom:7px;font-size:0.72rem;">
+      可新增自訂時段（如安親班）；Excel C欄支援代號、名稱、各種書寫習慣自動辨識
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;margin-bottom:7px;">
+      <div v-for="(sess,si) in customSessions" :key="'sess'+si"
+           :style="sess.disabled?'opacity:0.45;':''"
+           style="display:flex;align-items:center;gap:5px;padding:5px 9px;background:white;border-radius:9px;border:1px solid #e9eef3;font-size:0.72rem;">
+        <span style="background:#dbeafe;color:#1d4ed8;border-radius:8px;padding:1px 6px;font-size:0.65rem;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">{{ sess.code }}</span>
+        <span style="font-weight:600;color:#1e2b3a;flex:1;">{{ sess.name||'—' }}</span>
+        <span style="font-size:0.62rem;color:#6b7280;background:#f1f5f9;border-radius:7px;padding:1px 5px;flex-shrink:0;">{{ (sess.weekdays||[]).map(w=>WD_LABELS[w]).join('、') }}</span>
+        <span style="font-size:0.67rem;color:#4a6a85;min-width:40px;flex-shrink:0;">{{ sess.time||sess.desc||'' }}</span>
+        <label style="display:flex;align-items:center;gap:2px;font-size:0.67rem;cursor:pointer;flex-shrink:0;">
+          <input type="checkbox" :checked="!sess.disabled" @change="toggleSession(si)"> 啟用
+        </label>
+        <button v-if="!sess.isBuiltIn" @click="deleteSession(si)"
+                style="background:#ff6b6b;color:white;border:none;border-radius:12px;padding:2px 6px;font-size:0.6rem;cursor:pointer;flex-shrink:0;">刪除</button>
+      </div>
+    </div>
+    <div style="background:#f0f6ff;border-radius:11px;padding:9px;border:1px dashed #93c5fd;margin-bottom:10px;">
+      <div style="font-weight:600;font-size:0.76rem;color:#1d4ed8;margin-bottom:6px;">＋ 新增自訂時段</div>
+      <div class="flex" style="gap:6px;flex-wrap:wrap;margin-bottom:5px;">
+        <div><label style="font-size:0.7rem;display:block;margin-bottom:1px;">代號</label>
+          <input v-model="newSess.code" placeholder="如：AC" style="width:65px;padding:3px 8px;border-radius:24px;border:1px solid #bdc9d9;font-size:0.74rem;"></div>
+        <div><label style="font-size:0.7rem;display:block;margin-bottom:1px;">名稱</label>
+          <input v-model="newSess.name" placeholder="如：安親班" style="width:95px;padding:3px 8px;border-radius:24px;border:1px solid #bdc9d9;font-size:0.74rem;"></div>
+        <div><label style="font-size:0.7rem;display:block;margin-bottom:1px;">時間</label>
+          <input v-model="newSess.time" placeholder="14:30" style="width:68px;padding:3px 8px;border-radius:24px;border:1px solid #bdc9d9;font-size:0.74rem;"></div>
+      </div>
+      <div style="margin-bottom:6px;">
+        <label style="font-size:0.7rem;display:block;margin-bottom:2px;">上課星期</label>
+        <div class="flex" style="gap:4px;">
+          <label v-for="(wd,wi) in WD_LABELS" :key="'wd'+wi"
+                 style="display:flex;align-items:center;gap:2px;font-size:0.7rem;cursor:pointer;">
+            <input type="checkbox" :value="wi" v-model="newSess.weekdays"> {{ wd }}
+          </label>
+        </div>
+      </div>
+      <button class="btn blue" style="margin-top:0;padding:3px 11px;font-size:0.72rem;" @click="addCustomSession">✅ 新增時段</button>
+    </div>
+
+    <!-- ★ 暑期補課規則 -->
+    <div style="background:#fff3e0;border-radius:12px;padding:9px;border:1px solid #ffb74d;margin-bottom:10px;">
+      <div style="font-weight:600;font-size:0.8rem;color:#e65100;margin-bottom:5px;">☀️ 暑期期間（平日禁止補課，僅開放週六日）</div>
+      <div class="flex" style="gap:7px;flex-wrap:wrap;">
+        <div><label style="font-size:0.72rem;display:block;margin-bottom:1px;">暑期開始</label>
+          <input type="date" v-model="semesterConfig.summerStart" style="padding:3px 8px;border-radius:24px;border:1px solid #ffb74d;font-size:0.76rem;" @change="saveLS()"></div>
+        <div><label style="font-size:0.72rem;display:block;margin-bottom:1px;">暑期結束</label>
+          <input type="date" v-model="semesterConfig.summerEnd" style="padding:3px 8px;border-radius:24px;border:1px solid #ffb74d;font-size:0.76rem;" @change="saveLS()"></div>
+      </div>
+      <div style="font-size:0.67rem;color:#e65100;margin-top:4px;">設定後，暑期期間週一至週五補課欄位自動鎖定，僅週六日開放。</div>
+    </div>
+
     <div style="font-weight:600;font-size:0.84rem;margin-bottom:6px;">🗓️ 停課 / 休假</div>
     <div class="flex" style="flex-wrap:wrap;gap:8px;margin-bottom:8px;background:#f8fafd;padding:8px;border-radius:14px;border:1px solid #dde3ed;">
       <input type="date" v-model="newHoliday.dateStr" style="padding:4px 10px;border-radius:28px;border:1px solid #bdc9d9;font-size:0.8rem;">
@@ -792,9 +933,9 @@ td.col-dragging-col{opacity:0.35;}
     </div>
     <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;">各時段人數上限</div>
     <div class="makeup-sess-grid">
-      <div v-for="sess in sessionList" :key="sess.code" class="makeup-sess-card">
-        <div style="font-weight:700;font-size:0.82rem;margin-bottom:3px;">{{ sess.code.replace('春','') }} {{ sess.desc }}</div>
-        <div style="font-size:0.7rem;color:#6b7280;margin-bottom:6px;">{{ ['日','一','二','三','四','五','六'][sess.weekdays[0]] }}曜日</div>
+      <div v-for="sess in activeSessions" :key="sess.code" class="makeup-sess-card">
+        <div style="font-weight:700;font-size:0.82rem;margin-bottom:3px;">{{ sess.code }} {{ sess.time||sess.desc||'' }}</div>
+        <div style="font-size:0.7rem;color:#6b7280;margin-bottom:6px;">{{ (sess.weekdays||[]).map(w=>WD_LABELS[w]).join('、') }}</div>
         <div class="flex" style="gap:4px;align-items:center;">
           <span style="font-size:0.74rem;">上限：</span>
           <input type="number" min="0" v-model.number="makeupWeekQuotas[sess.code]"
@@ -831,6 +972,41 @@ td.col-dragging-col{opacity:0.35;}
 <!-- 整欄拖曳幽靈 -->
 <div v-if="colDragGhost.show" class="col-ghost" :style="{left:colDragGhost.x+'px',top:colDragGhost.y+'px'}">⠿ {{ colDragGhost.label }}</div>
 
+<!-- ★ 課程管理 Modal -->
+<div class="modal-mask" v-if="courseModal.show" @click.self="courseModal.show=false">
+  <div class="modal-box wide">
+    <div class="modal-title">📚 課程管理</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;">
+      <div v-for="course in allCourses" :key="course.id"
+           :class="['course-item', activeCourseId===course.id?'active-course':'']"
+           @click="switchCourse(course.id)"
+           style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:11px;border:1px solid #e9eef3;background:white;cursor:pointer;">
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:0.82rem;color:#1e2b3a;">{{ course.name }}</div>
+          <div style="font-size:0.67rem;color:#6b7280;">{{ course.type==='short'?'短期課程':'學期課程' }} ｜ {{ course.dateRange||'未設定日期' }}</div>
+        </div>
+        <span :class="['course-type-badge', course.type==='short'?'short':'semester']">{{ course.type==='short'?'短期':'學期' }}</span>
+        <span v-if="activeCourseId===course.id" style="font-size:0.7rem;color:#4a9eff;font-weight:700;">✓ 目前</span>
+      </div>
+      <div v-if="!allCourses.length" style="color:#aaa;text-align:center;padding:12px;">尚未建立任何課程</div>
+    </div>
+    <div v-if="role==='admin'" style="background:#f8fafd;border-radius:12px;padding:10px;border:1px solid #dde3ed;">
+      <div style="font-weight:600;font-size:0.78rem;margin-bottom:6px;">＋ 新增課程</div>
+      <div class="flex" style="gap:7px;flex-wrap:wrap;">
+        <input v-model="newCourse.name" placeholder="如：暑期第一梯 2026"
+               style="padding:5px 10px;border-radius:24px;border:1px solid #bdc9d9;font-size:0.78rem;width:160px;">
+        <select v-model="newCourse.type"
+                style="padding:5px 10px;border-radius:24px;border:1px solid #bdc9d9;font-size:0.78rem;">
+          <option value="semester">學期課程</option>
+          <option value="short">短期課程</option>
+        </select>
+        <button class="btn green" style="margin-top:0;" @click="addCourse">✅ 建立</button>
+      </div>
+    </div>
+    <button class="btn gray" style="margin-top:10px;" @click="courseModal.show=false">關閉</button>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
@@ -842,7 +1018,7 @@ const WD_LABELS   = ['日','一','二','三','四','五','六'];
 const WEEKDAY_MAP = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'日':0,'天':0};
 const MONDAY_WD   = 1;
 const DEFAULT_COL_COUNT = 9;
-const LS_KEY = 'spring_v10_data';
+const LS_KEY = 'spring_v11_data';
 const MAX_LEVEL = 10;
 
 const SESSION_DEFS = [
@@ -1043,20 +1219,38 @@ new Vue({
   data:{
     role:'parent',
     WD_LABELS,
+
+    // ★ 課程管理
+    allCourses:[],
+    activeCourseId:'course_default',
+    courseModal:{show:false},
+    newCourse:{name:'',type:'semester'},
+
+    // ★ 動態時段
+    customSessions:[],
+    newSess:{code:'',name:'',time:'',weekdays:[]},
+
     sessionsData:{},
     baseColDefs:{},
+    subTeacherOverrides:{},
     currentDateStr:'',
     currentWeekdayNum:-1,
     currentWeekIdx:0,
-    currentSessionCode:'春S1',
-    adminSession:'春S1',
-    muName:[], muGrade:[],
+    currentSessionCode:'S1',
+    adminSession:'S1',
+    muName:[],muGrade:[],
     adminQuotaVals:[],
     startDateInput:'2026-02-23',
     weeksCount:18,
-    semesterConfig:{name:'春季班',endDate:'2026-06-14',makeupStartDate:'2026-06-15',makeupEndDate:'2026-06-28'},
+    semesterConfig:{
+      name:'春季班',
+      endDate:'2026-06-14',
+      makeupStartDate:'2026-06-15',
+      makeupEndDate:'2026-06-28',
+      summerStart:'',
+      summerEnd:'',
+    },
     dateList:[],
-    sessionList:SESSION_DEFS,
     makeupRecords:[],
     leaveRecords:[],
     blockedWeeks:[],
@@ -1070,7 +1264,7 @@ new Vue({
     dragOverCell:null,
     touchDrag:{active:false,startRi:-1,startCi:-1,x:0,y:0,label:'',timer:null},
 
-    // ★ 整欄拖曳
+    // 整欄拖曳
     colDraggingIdx:-1,
     colDragOver:-1,
     colDragGhost:{show:false,x:0,y:0,label:''},
@@ -1080,8 +1274,6 @@ new Vue({
     studentPool:[],
     gradeConflicts:[],
     unassignedStudents:[],
-    // ★ 代課老師覆蓋：key = "dateStr__sessionCode__colIdx" → teacherName
-    subTeacherOverrides:{},
 
     // Modals
     headerEditModal:{
@@ -1093,8 +1285,6 @@ new Vue({
     stuEditModal:{show:false,ri:-1,ci:-1,name:'',grade:''},
     makeupModal:{show:false},
     historyModal:{show:false,fromDate:'',toDate:'',typeFilter:'',nameFilter:''},
-
-    // ★ 學生操作浮動選單
     actionMenu:{show:false,ri:-1,ci:-1,name:'',x:0,y:0,currentState:'normal'},
 
     // 歷史
@@ -1104,6 +1294,21 @@ new Vue({
   },
 
   computed:{
+    // ★ 課程與時段
+    currentCourse(){
+      const list=this.allCourses||[];
+      return list.find(c=>c.id===this.activeCourseId)||
+        {id:'course_default',name:this.semesterConfig.name||'春季班',type:'semester',dateRange:''};
+    },
+    activeSessions(){
+      const cs=this.customSessions||[];
+      if(cs.length) return cs.filter(s=>!s.disabled);
+      return SESSION_DEFS.map(s=>({
+        code:s.code.replace('春',''),name:'',time:s.desc,
+        weekdays:s.weekdays,isBuiltIn:true,disabled:false,
+      }));
+    },
+
     currentKey(){return makeKey(this.currentDateStr,this.currentSessionCode);},
     currentSessionData(){return this.getOrCreate(this.currentDateStr,this.currentSessionCode);},
     currentCols(){return this.currentSessionData.cols||[];},
@@ -1119,14 +1324,17 @@ new Vue({
         if(d>=ms&&d<=me) return 'makeup';
       }
       if(this.semesterConfig.endDate&&d>new Date(this.semesterConfig.endDate)) return 'closed';
+      if(this.isSummerPeriodDate(this.currentDateStr)) return 'summer';
       return 'normal';
     },
-    semesterBarClass(){return {normal:'',makeup:'makeup',blocked:'blocked',holiday:'',closed:'closed'}[this.semesterStatus]||'';},
-    semesterBadgeClass(){return {normal:'normal',makeup:'makeup',blocked:'blocked',holiday:'holiday',closed:'closed'}[this.semesterStatus]||'normal';},
-    semesterStatusLabel(){return {normal:'正常上課',makeup:'補課週',blocked:'封鎖週',holiday:'停課日',closed:'學期結束'}[this.semesterStatus]||'';},
+    semesterBarClass(){return {normal:'',makeup:'makeup',blocked:'blocked',holiday:'',closed:'closed',summer:'summer'}[this.semesterStatus]||'';},
+    semesterBadgeClass(){return {normal:'normal',makeup:'makeup',blocked:'blocked',holiday:'holiday',closed:'closed',summer:'summer'}[this.semesterStatus]||'normal';},
+    semesterStatusLabel(){return {normal:'正常上課',makeup:'補課週',blocked:'封鎖週',holiday:'停課日',closed:'學期結束',summer:'暑期課程'}[this.semesterStatus]||'';},
     currentDayStatus(){return this.semesterStatus;},
     currentDayLocked(){return ['holiday','blocked','closed'].includes(this.currentDayStatus);},
     isMakeupWeek(){return this.semesterStatus==='makeup';},
+    isSummerPeriod(){return this.isSummerPeriodDate(this.currentDateStr);},
+    isSummerWeekday(){return this.isSummerPeriod&&![0,6].includes(this.currentWeekdayNum);},
 
     weekGroups(){
       const g=[];
@@ -1155,7 +1363,7 @@ new Vue({
       const wk=this.weekGroups[this.currentWeekIdx]; if(!wk) return [];
       return wk.dates.map(d=>({
         num:d.weekdayNum,dateStr:d.dateStr,
-        sessions:SESSION_DEFS.filter(s=>s.weekdays.includes(d.weekdayNum)),
+        sessions:this.activeSessions.filter(s=>s.weekdays.includes(d.weekdayNum)),
         isBlocked:this.isBlockedWeekDate(d.dateStr),
         isHoliday:this.holidays.some(h=>h.dateStr===d.dateStr),
       })).filter(d=>d.sessions.length);
@@ -1177,7 +1385,7 @@ new Vue({
     currentWeekIdx(){
       const wk=this.weekGroups[this.currentWeekIdx]; if(!wk) return;
       for(const d of wk.dates){
-        const sess=SESSION_DEFS.filter(s=>s.weekdays.includes(d.weekdayNum));
+        const sess=this.activeSessions.filter(s=>s.weekdays.includes(d.weekdayNum));
         if(sess.length){this.selectDateSession(d.dateStr,d.weekdayNum,sess[0].code);break;}
       }
     },
@@ -1187,6 +1395,58 @@ new Vue({
 
   methods:{
     gradeColor, gradeDisplay, hasN,
+
+    // ── 暑期判斷 ──────────────────────────────────────────────────────────────
+    isSummerPeriodDate(dateStr){
+      if(!dateStr||!this.semesterConfig.summerStart||!this.semesterConfig.summerEnd) return false;
+      const d=this.toDate(dateStr); if(!d) return false;
+      const s=new Date(this.semesterConfig.summerStart),e=new Date(this.semesterConfig.summerEnd);
+      return d>=s&&d<=e;
+    },
+
+    // ── 課程管理 ──────────────────────────────────────────────────────────────
+    addCourse(){
+      if(!this.newCourse.name.trim()){alert('請輸入課程名稱');return;}
+      const id='course_'+Date.now();
+      this.allCourses.push({id,name:this.newCourse.name.trim(),type:this.newCourse.type,dateRange:''});
+      this.newCourse={name:'',type:'semester'};
+      this.saveLS();
+    },
+    switchCourse(id){
+      this.activeCourseId=id;
+      this.courseModal.show=false;
+      this.generateDates();
+      this.saveLS();
+    },
+
+    // ── 時段管理 ──────────────────────────────────────────────────────────────
+    getSessionDisplay(code){
+      const s=this.activeSessions.find(s=>s.code===code||s.code===code.replace('春',''));
+      return s?`${s.code}${s.name?' ('+s.name+')':''} ${s.time||s.desc||''}`:code;
+    },
+    toggleSession(si){
+      this.customSessions[si].disabled=!this.customSessions[si].disabled;
+      this.saveLS(); this.$forceUpdate();
+    },
+    deleteSession(si){
+      if(!confirm('確定刪除此時段？')) return;
+      this.customSessions.splice(si,1);
+      this.saveLS(); this.$forceUpdate();
+    },
+    addCustomSession(){
+      const{code,name,time,weekdays}=this.newSess;
+      if(!code.trim()){alert('請輸入代號');return;}
+      if(!time){alert('請輸入時間');return;}
+      if(!weekdays.length){alert('請選擇星期');return;}
+      if(this.customSessions.some(s=>s.code.toUpperCase()===code.trim().toUpperCase())){alert('代號已存在');return;}
+      this.customSessions.push({
+        code:code.trim().toUpperCase(),name:name.trim(),time,
+        weekdays:[...weekdays].map(Number).sort(),isBuiltIn:false,disabled:false,
+      });
+      this.newSess={code:'',name:'',time:'',weekdays:[]};
+      this.saveLS(); this.$forceUpdate();
+      this.addLog('setting',`新增時段 ${code} ${name} ${time}`);
+    },
 
     // ── class 輔助方法 ──────────────────────────────────────────────────────────
     getTdClass(ri,ci,col){
@@ -1213,6 +1473,8 @@ new Vue({
     saveLS(){
       try{
         localStorage.setItem(LS_KEY,JSON.stringify({
+          allCourses:this.allCourses,activeCourseId:this.activeCourseId,
+          customSessions:this.customSessions,
           sessionsData:this.sessionsData,baseColDefs:this.baseColDefs,
           makeupRecords:this.makeupRecords,leaveRecords:this.leaveRecords,
           studentDatabase:this.studentDatabase,allHistory:this.allHistory,
@@ -1241,6 +1503,9 @@ new Vue({
         if(d.makeupWeekQuotas) this.makeupWeekQuotas=d.makeupWeekQuotas;
         if(d.unassignedStudents) this.unassignedStudents=d.unassignedStudents;
         if(d.subTeacherOverrides) this.subTeacherOverrides=d.subTeacherOverrides;
+        if(d.allCourses) this.allCourses=d.allCourses;
+        if(d.activeCourseId) this.activeCourseId=d.activeCourseId;
+        if(d.customSessions) this.customSessions=d.customSessions;
         return true;
       }catch(e){console.warn('LS load failed:',e.message);return false;}
     },
@@ -1292,7 +1557,7 @@ new Vue({
         const baseCols=this.baseColDefs[baseKey];
         if(baseCols){
           this.$set(this.sessionsData,key,emptySession(baseCols));
-        } else if(wdNum===MONDAY_WD&&code==='春S1'){
+        } else if(wdNum===MONDAY_WD&&(code==='春S1'||code==='S1')){
           const sess=monS1Session();
           this.$set(this.sessionsData,key,sess);
           if(!this.baseColDefs[baseKey]) this.$set(this.baseColDefs,baseKey,sess.cols.map(c=>({...c})));
@@ -1820,7 +2085,6 @@ new Vue({
       this.currentDateStr=dateStr; this.currentWeekdayNum=wdNum;
       this.currentSessionCode=code; this.adminSession=code;
     },
-    getSessionDisplay(code){const s=SESSION_DEFS.find(s=>s.code===code);return s?`${s.code.replace('春','')} ${s.desc}`:code;},
     generateDates(){
       if(!this.startDateInput) return;
       const start=new Date(this.startDateInput), dates=[];
@@ -1831,10 +2095,12 @@ new Vue({
       this.dateList=dates;
       dates.forEach(d=>{
         if(d.weekdayNum===MONDAY_WD){
-          const key=makeKey(d.dateStr,'春S1');
+          const key=makeKey(d.dateStr,'S1');
           if(!this.sessionsData[key]){
-            const sess=monS1Session(); this.$set(this.sessionsData,key,sess);
-            if(!this.baseColDefs[`${MONDAY_WD}__春S1`]) this.$set(this.baseColDefs,`${MONDAY_WD}__春S1`,sess.cols.map(c=>({...c})));
+            const sess=monS1Session();
+            this.$set(this.sessionsData,key,sess);
+            const bk=`${MONDAY_WD}__S1`;
+            if(!this.baseColDefs[bk]) this.$set(this.baseColDefs,bk,sess.cols.map(c=>({...c})));
           }
         }
       });
@@ -1847,7 +2113,10 @@ new Vue({
       }
       this.currentWeekIdx=ti;
       const wk=dates.slice(ti*7,(ti+1)*7);
-      for(const d of wk){const sess=SESSION_DEFS.filter(s=>s.weekdays.includes(d.weekdayNum));if(sess.length){this.selectDateSession(d.dateStr,d.weekdayNum,sess[0].code);break;}}
+      for(const d of wk){
+        const sess=this.activeSessions.filter(s=>s.weekdays.includes(d.weekdayNum));
+        if(sess.length){this.selectDateSession(d.dateStr,d.weekdayNum,sess[0].code);break;}
+      }
       this.saveLS();
     },
 
@@ -1994,12 +2263,24 @@ new Vue({
     else if(h.startsWith('teacher')) this.role='teacher';
     else if(h.startsWith('admin')) this.role='admin';
     this.loadLS();
+    // 初始化時段（若未從 localStorage 載入）
+    if(!this.customSessions.length){
+      this.customSessions=SESSION_DEFS.map(s=>({
+        code:s.code.replace('春',''),name:'',time:s.desc,
+        weekdays:s.weekdays,isBuiltIn:true,disabled:false,
+      }));
+    }
+    // 初始化課程
+    if(!this.allCourses.length){
+      this.allCourses.push({id:'course_default',name:this.semesterConfig.name||'春季班',type:'semester',dateRange:''});
+    }
+    if(!this.activeCourseId) this.activeCourseId='course_default';
     this.generateDates();
-    SESSION_DEFS.forEach(s=>{if(!this.makeupWeekQuotas[s.code]) this.makeupWeekQuotas[s.code]=20;});
+    // 補課週名額初始化
+    this.activeSessions.forEach(s=>{if(!this.makeupWeekQuotas[s.code]) this.makeupWeekQuotas[s.code]=20;});
     const now=new Date(), ago=new Date(now.getTime()-30*24*60*60*1000);
     this.historyModal.toDate=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     this.historyModal.fromDate=`${ago.getFullYear()}-${String(ago.getMonth()+1).padStart(2,'0')}-${String(ago.getDate()).padStart(2,'0')}`;
-    // 點擊空白處關閉選單
     document.addEventListener('click',()=>this.closeActionMenu());
   },
 });

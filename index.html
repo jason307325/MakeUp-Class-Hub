@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
-<title>春季班 請假補課系統 v9</title>
+<title>春季班 請假補課系統 v10</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;font-family:'Segoe UI',Roboto,system-ui,sans-serif;}
@@ -217,7 +217,14 @@ td.col-dragging-col{opacity:0.35;}
 .makeup-sess-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px;}
 .makeup-sess-card{background:white;border-radius:14px;padding:12px;border:1px solid #e9eef3;}
 
-@media(max-width:600px){
+/* 老師名稱顯示 */
+.th-teacher{font-size:0.6rem;color:#4a6a85;margin-top:1px;font-weight:500;}
+.th-teacher.sub{color:#f59e0b;font-weight:700;}
+.sub-teacher-badge{display:inline-block;background:#fef3c7;color:#92400e;border-radius:10px;padding:0 4px;font-size:0.55rem;font-weight:700;margin-left:2px;border:1px solid #fcd34d;}
+
+/* 代課老師設定區 */
+.sub-teacher-section{background:#fef9c3;border-radius:14px;padding:10px 12px;margin-bottom:10px;border:1px dashed #fcd34d;}
+.sub-teacher-label{font-size:0.78rem;font-weight:600;color:#92400e;margin-bottom:6px;}
   td,th{min-width:76px !important;font-size:0.7rem;}
   .modal-box{padding:12px;}
   .stu-action-menu{min-width:110px;}
@@ -229,7 +236,7 @@ td.col-dragging-col{opacity:0.35;}
 
 <!-- 頂部 -->
 <div class="top-bar">
-  <h1>📋 春季班 <small>請假補課點名系統 v9</small></h1>
+  <h1>📋 春季班 <small>請假補課點名系統 v10</small></h1>
   <div class="role-bar">
     <button class="role-btn" :class="{active:role==='parent'}"  @click="role='parent'">👪 家長</button>
     <button class="role-btn" :class="{active:role==='teacher'}" @click="role='teacher'">📌 老師</button>
@@ -283,10 +290,16 @@ td.col-dragging-col{opacity:0.35;}
             @click="role==='admin' && !col.isRemark && onHeaderClick(ci)">
           <div class="th-inner">
             <div class="th-top">
-              <!-- 整欄拖曳把手（後台才顯示） -->
               <span v-if="role==='admin'" class="col-drag-handle" @click.stop title="拖曳調整欄位順序">⠿</span>
               <span>{{ col.label || (role==='admin'?'（未命名）':'') }}</span>
               <span v-if="col.isClass && getOverCount(ci)>0" class="warn-badge">超額{{ getOverCount(ci) }}</span>
+            </div>
+            <!-- 老師名稱（固定或代課） -->
+            <div v-if="col.isClass" :class="['th-teacher', getEffectiveTeacher(ci).isSub?'sub':'']">
+              <span v-if="getEffectiveTeacher(ci).name">
+                {{ getEffectiveTeacher(ci).name }}
+                <span v-if="getEffectiveTeacher(ci).isSub" class="sub-teacher-badge">代</span>
+              </span>
             </div>
             <div class="th-sub" v-if="col.isClass && col.grades && col.grades.length">
               {{ col.grades.slice(0,4).join(' ') }}{{ col.grades.length>4?'…':'' }}
@@ -602,6 +615,27 @@ td.col-dragging-col{opacity:0.35;}
              style="width:100%;padding:6px 12px;border-radius:28px;border:1px solid #bdc9d9;font-size:0.88rem;">
     </div>
 
+    <!-- ★ 固定老師 -->
+    <div class="he-section">
+      <div class="he-label">固定老師（長期有效）</div>
+      <input v-model="headerEditModal.teacher" placeholder="如：王老師"
+             style="width:100%;padding:6px 12px;border-radius:28px;border:1px solid #bdc9d9;font-size:0.85rem;">
+    </div>
+
+    <!-- ★ 本週代課老師 -->
+    <div class="sub-teacher-section">
+      <div class="sub-teacher-label">🔄 本週代課老師（只影響目前週次，下週自動恢復固定老師）</div>
+      <div class="flex" style="gap:8px;align-items:center;flex-wrap:wrap;">
+        <input v-model="headerEditModal.subTeacher" placeholder="如：李老師（留空＝本週無代課）"
+               style="flex:1;min-width:140px;padding:6px 12px;border-radius:28px;border:1px solid #fcd34d;font-size:0.82rem;background:#fffef0;">
+        <button v-if="headerEditModal.subTeacher" class="btn orange" style="margin-top:0;padding:3px 10px;font-size:0.72rem;" @click="headerEditModal.subTeacher=''">清除</button>
+      </div>
+      <div style="font-size:0.67rem;color:#92400e;margin-top:4px;">
+        目前固定老師：<b>{{ headerEditModal.teacher||'（未設定）' }}</b>
+        <span v-if="headerEditModal.subTeacher"> → 本週代課：<b>{{ headerEditModal.subTeacher }}</b></span>
+      </div>
+    </div>
+
     <div class="he-section">
       <div class="he-label">程度組合</div>
       <div class="grade-chips">
@@ -808,7 +842,7 @@ const WD_LABELS   = ['日','一','二','三','四','五','六'];
 const WEEKDAY_MAP = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'日':0,'天':0};
 const MONDAY_WD   = 1;
 const DEFAULT_COL_COUNT = 9;
-const LS_KEY = 'spring_v9_data';
+const LS_KEY = 'spring_v10_data';
 const MAX_LEVEL = 10;
 
 const SESSION_DEFS = [
@@ -965,7 +999,7 @@ function buildStudents(rows,cols){
 }
 function makeDefaultCols(n){
   return Array.from({length:n||DEFAULT_COL_COUNT},()=>({
-    label:'',isClass:true,isRemark:false,grades:[],limit:0,makeupEnabled:false,makeupQuota:5,
+    label:'',teacher:'',isClass:true,isRemark:false,grades:[],limit:0,makeupEnabled:false,makeupQuota:5,
   }));
 }
 function emptySession(cols){
@@ -975,15 +1009,15 @@ function emptySession(cols){
 }
 
 const DEFAULT_MON_COLS=[
-  {label:'1RY鋼鐵人',isClass:true,isRemark:false,grades:['1R','1Y'],limit:0,makeupEnabled:true,makeupQuota:0},
-  {label:'1B2R綠茶', isClass:true,isRemark:false,grades:['1B','2R'],limit:0,makeupEnabled:true,makeupQuota:2},
-  {label:'2YB小白',  isClass:true,isRemark:false,grades:['2Y','2B'],limit:0,makeupEnabled:true,makeupQuota:3},
-  {label:'3小馬',    isClass:true,isRemark:false,grades:['3R','3Y','3B'],limit:0,makeupEnabled:true,makeupQuota:3},
-  {label:'4饅頭',    isClass:true,isRemark:false,grades:['4R','4Y','4B'],limit:0,makeupEnabled:true,makeupQuota:3},
-  {label:'5+6阿軍',  isClass:true,isRemark:false,grades:['5R','5Y','5B','6R','6Y','6B'],limit:0,makeupEnabled:true,makeupQuota:4},
-  {label:'7以上青蛙',isClass:true,isRemark:false,grades:['7R','7Y','7B','8R','8Y','8B','9R','9Y','9B','10'],limit:0,makeupEnabled:true,makeupQuota:4},
-  {label:'備註',     isClass:false,isRemark:true,grades:[],limit:0,makeupEnabled:false,makeupQuota:0},
-  {label:'',         isClass:true,isRemark:false,grades:[],limit:0,makeupEnabled:false,makeupQuota:0},
+  {label:'1RY鋼鐵人',isClass:true,isRemark:false,teacher:'',grades:['1R','1Y'],limit:0,makeupEnabled:true,makeupQuota:0},
+  {label:'1B2R綠茶', isClass:true,isRemark:false,teacher:'',grades:['1B','2R'],limit:0,makeupEnabled:true,makeupQuota:2},
+  {label:'2YB小白',  isClass:true,isRemark:false,teacher:'',grades:['2Y','2B'],limit:0,makeupEnabled:true,makeupQuota:3},
+  {label:'3小馬',    isClass:true,isRemark:false,teacher:'',grades:['3R','3Y','3B'],limit:0,makeupEnabled:true,makeupQuota:3},
+  {label:'4饅頭',    isClass:true,isRemark:false,teacher:'',grades:['4R','4Y','4B'],limit:0,makeupEnabled:true,makeupQuota:3},
+  {label:'5+6阿軍',  isClass:true,isRemark:false,teacher:'',grades:['5R','5Y','5B','6R','6Y','6B'],limit:0,makeupEnabled:true,makeupQuota:4},
+  {label:'7以上青蛙',isClass:true,isRemark:false,teacher:'',grades:['7R','7Y','7B','8R','8Y','8B','9R','9Y','9B','10'],limit:0,makeupEnabled:true,makeupQuota:4},
+  {label:'備註',     isClass:false,isRemark:true,teacher:'',grades:[],limit:0,makeupEnabled:false,makeupQuota:0},
+  {label:'',         isClass:true,isRemark:false,teacher:'',grades:[],limit:0,makeupEnabled:false,makeupQuota:0},
 ];
 const MON_S1_ROWS=[
   [{name:'朱宓清',group:'1Y'},{name:'陳子元',group:'2R'},{name:'李恩燦',group:'2B'},{name:'林章綺',group:'3Y'},{name:'李羽程',group:'4B'},{name:'周道',group:'5B'},{name:'許諾',group:'7R',star:true},null,null],
@@ -1046,10 +1080,12 @@ new Vue({
     studentPool:[],
     gradeConflicts:[],
     unassignedStudents:[],
+    // ★ 代課老師覆蓋：key = "dateStr__sessionCode__colIdx" → teacherName
+    subTeacherOverrides:{},
 
     // Modals
     headerEditModal:{
-      show:false,ci:-1,label:'',grades:[],limit:0,
+      show:false,ci:-1,label:'',teacher:'',subTeacher:'',grades:[],limit:0,
       makeupEnabled:false,makeupQuota:5,
       addGradeInput:'',conflictGrades:[],autoPreview:[],
     },
@@ -1183,6 +1219,7 @@ new Vue({
           semesterConfig:this.semesterConfig,startDateInput:this.startDateInput,
           weeksCount:this.weeksCount,holidays:this.holidays,blockedWeeks:this.blockedWeeks,
           makeupWeekQuotas:this.makeupWeekQuotas,unassignedStudents:this.unassignedStudents,
+          subTeacherOverrides:this.subTeacherOverrides,
         }));
       }catch(e){console.warn('LS save failed:',e.message);}
     },
@@ -1203,6 +1240,7 @@ new Vue({
         if(d.blockedWeeks) this.blockedWeeks=d.blockedWeeks;
         if(d.makeupWeekQuotas) this.makeupWeekQuotas=d.makeupWeekQuotas;
         if(d.unassignedStudents) this.unassignedStudents=d.unassignedStudents;
+        if(d.subTeacherOverrides) this.subTeacherOverrides=d.subTeacherOverrides;
         return true;
       }catch(e){console.warn('LS load failed:',e.message);return false;}
     },
@@ -1269,7 +1307,7 @@ new Vue({
 
     // ── 欄位增減 ──────────────────────────────────────────────────────────────
     addCol(){
-      const nc={label:'',isClass:true,isRemark:false,grades:[],limit:0,makeupEnabled:false,makeupQuota:5};
+      const nc={label:'',teacher:'',isClass:true,isRemark:false,grades:[],limit:0,makeupEnabled:false,makeupQuota:5};
       const sess=this.currentSessionData;
       sess.cols.push({...nc}); sess.quotas.push(emptyQuota());
       sess.rows.forEach(r=>r.push(null));
@@ -1339,12 +1377,26 @@ new Vue({
     },
 
     // ── 表頭編輯 ──────────────────────────────────────────────────────────────
+    // ★ 取得有效老師（代課優先，否則固定老師）
+    getEffectiveTeacher(ci){
+      const subKey=`${this.currentDateStr}__${this.currentSessionCode}__${ci}`;
+      const sub=this.subTeacherOverrides[subKey];
+      if(sub) return {name:sub, isSub:true};
+      const col=this.currentCols[ci];
+      return {name:col?.teacher||'', isSub:false};
+    },
+
     onHeaderClick(ci){
       if(this.role!=='admin') return;
       const col=this.currentCols[ci]; if(!col||col.isRemark) return;
       const otherGrades=this.currentCols.filter((_,i)=>i!==ci&&this.currentCols[i].isClass).flatMap(c=>c.grades||[]);
+      // 讀取本週代課
+      const subKey=`${this.currentDateStr}__${this.currentSessionCode}__${ci}`;
+      const currentSub=this.subTeacherOverrides[subKey]||'';
       this.headerEditModal={
         show:true,ci,label:col.label||'',
+        teacher:col.teacher||'',
+        subTeacher:currentSub,
         grades:[...(col.grades||[])],limit:col.limit||0,
         makeupEnabled:!!col.makeupEnabled,makeupQuota:col.makeupQuota||5,
         addGradeInput:'',conflictGrades:otherGrades.filter(g=>(col.grades||[]).includes(g)),
@@ -1374,30 +1426,72 @@ new Vue({
       this.headerEditModal.autoPreview=[];
     },
     _applyHeaderEdit(){
-      const{ci,label,grades,limit,makeupEnabled,makeupQuota}=this.headerEditModal;
+      const{ci,label,teacher,subTeacher,grades,limit,makeupEnabled,makeupQuota}=this.headerEditModal;
       const col=this.currentSessionData.cols[ci];
-      col.label=label.trim(); col.grades=[...grades]; col.limit=limit||0;
+      col.label=label.trim();
+      col.teacher=teacher.trim();
+      col.grades=[...grades]; col.limit=limit||0;
       col.makeupEnabled=makeupEnabled; col.makeupQuota=makeupQuota||0;
       if(this.currentSessionData.quotas[ci]){
         this.currentSessionData.quotas[ci].available=makeupEnabled?(makeupQuota||0):0;
         this.currentSessionData.quotas[ci].noRefill=!makeupEnabled;
       }
+      // ★ 代課老師：只寫入目前週次的每一天
+      const subKey=`${this.currentDateStr}__${this.currentSessionCode}__${ci}`;
+      if(subTeacher.trim()){
+        // 找出目前週次的所有同星期幾日期
+        const wk=this.weekGroups[this.currentWeekIdx];
+        if(wk){
+          wk.dates.forEach(d=>{
+            if(d.weekdayNum!==this.currentWeekdayNum) return;
+            const k=`${d.dateStr}__${this.currentSessionCode}__${ci}`;
+            this.$set(this.subTeacherOverrides,k,subTeacher.trim());
+          });
+        }
+        this.addLog('setting',`欄${ci+1}「${col.label}」本週代課：${subTeacher.trim()}`);
+      } else {
+        // 清除本週代課
+        const wk=this.weekGroups[this.currentWeekIdx];
+        if(wk){
+          wk.dates.forEach(d=>{
+            if(d.weekdayNum!==this.currentWeekdayNum) return;
+            const k=`${d.dateStr}__${this.currentSessionCode}__${ci}`;
+            this.$delete(this.subTeacherOverrides,k);
+          });
+        }
+      }
+      // 同步 baseColDefs
       const baseKey=`${this.currentWeekdayNum}__${this.currentSessionCode}`;
       if(!this.baseColDefs[baseKey]) this.$set(this.baseColDefs,baseKey,this.currentSessionData.cols.map(c=>({...c})));
       else this.baseColDefs[baseKey][ci]={...col};
+      // ★ 同步到今天及之後的日期（不回溯）
+      const todayTs=new Date().setHours(0,0,0,0);
       this.dateList.forEach(d=>{
         if(d.weekdayNum!==this.currentWeekdayNum) return;
+        // 判斷是否為今天或之後
+        const yr=new Date(this.startDateInput||'2026-01-01').getFullYear();
+        const p=d.dateStr.split('/');
+        const dTs=new Date(yr,parseInt(p[0])-1,parseInt(p[1])).getTime();
+        if(dTs<todayTs) return; // 過去不動
         const key=makeKey(d.dateStr,this.currentSessionCode);
         const sess=this.sessionsData[key];
         if(!sess||key===this.currentKey) return;
-        if(sess.cols[ci]){sess.cols[ci]={...col};sess.quotas[ci]={available:makeupEnabled?(makeupQuota||0):0,waitlist:0,noRefill:!makeupEnabled};}
+        if(sess.cols[ci]){
+          sess.cols[ci]={...col};
+          sess.quotas[ci]={available:makeupEnabled?(makeupQuota||0):0,waitlist:0,noRefill:!makeupEnabled};
+        }
       });
       this.adminQuotaVals=(this.currentSessionData.quotas||[]).map(q=>q.available);
-      this.addLog('setting',`欄${ci+1}「${col.label}」程度：${grades.join(',')}`);
+      this.addLog('setting',`欄${ci+1}「${col.label}」老師：${teacher} 程度：${grades.join(',')}`);
       this.saveLS(); this.$forceUpdate();
     },
     confirmHeaderEdit(){this._applyHeaderEdit();this.headerEditModal.show=false;},
-    confirmHeaderEditAndReassign(){this._applyHeaderEdit();this.headerEditModal.show=false;if(this.studentDatabase.length) this.runAutoAssign();else alert('已儲存，請上傳名單後再分班。');},
+    confirmHeaderEditAndReassign(){
+      this._applyHeaderEdit();
+      this.headerEditModal.show=false;
+      if(this.studentDatabase.length) this.runAutoAssign();
+      else alert('已儲存，請上傳名單後再分班。');
+    },
 
     // ── 欄位相關 ──────────────────────────────────────────────────────────────
     getQuota(ci){return this.currentSessionData.quotas?.[ci]||emptyQuota();},
@@ -1833,6 +1927,7 @@ new Vue({
     runAutoAssign(){
       if(!this.studentDatabase.length){alert('請先上傳學生名單');return;}
       const unassigned=[];
+      const todayTs=new Date().setHours(0,0,0,0);
       for(const baseKey of Object.keys(this.baseColDefs)){
         const cols=this.baseColDefs[baseKey]; if(!cols||!cols.some(c=>c.isClass)) continue;
         const[wdNumStr,sessionCode]=baseKey.split('__');
@@ -1858,8 +1953,13 @@ new Vue({
           if(col.isClass&&col.limit&&col.limit>0&&colStudents[ci].length>col.limit)
             this.addLog('warn',`⚠️ ${sessionCode}「${col.label}」超額：${colStudents[ci].length}人（上限${col.limit}）`);
         });
+        // ★ 只寫入今天及之後的日期
         this.dateList.forEach(d=>{
           if(d.weekdayNum!==wdNum) return;
+          const yr=new Date(this.startDateInput||'2026-01-01').getFullYear();
+          const p=d.dateStr.split('/');
+          const dTs=new Date(yr,parseInt(p[0])-1,parseInt(p[1])).getTime();
+          if(dTs<todayTs) return; // 不回溯過去
           const key=makeKey(d.dateStr,sessionCode);
           const maxRows=Math.max(10,...colStudents.map(cs=>cs.length));
           const rows=Array.from({length:maxRows},(_,ri)=>cols.map((col,ci)=>{const stu=colStudents[ci][ri];if(!stu) return null;return{name:stu.name,group:stu.grade,pending:stu.pending||false,star:false};}));
@@ -1869,7 +1969,7 @@ new Vue({
       }
       this.unassignedStudents=unassigned; this.studentPool=[];
       this.adminQuotaVals=(this.currentSessionData.quotas||[]).map(q=>q.available);
-      this.addLog('grade',`分班完成，未分配 ${unassigned.length} 人`);
+      this.addLog('grade',`分班完成（今天起），未分配 ${unassigned.length} 人`);
       this.saveLS(); this.$forceUpdate();
       alert(`✅ 分班完成！${unassigned.length?`未分配 ${unassigned.length} 人。`:'所有學生已分配。'}`);
     },
